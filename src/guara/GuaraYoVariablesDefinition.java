@@ -38,32 +38,44 @@ public class GuaraYoVariablesDefinition {
 	public YoDouble q_abdHip0X= new YoDouble("q_abdHip0X", registry);
 	public YoDouble qd_abdHip0X= new YoDouble("qd_abdHip0X", registry);
 	public YoDouble qdd_abdHip0X= new YoDouble("qdd_abdHip0X", registry);
-//	, qd_abdHip0X, qdd_abdHip0X, tau_abdHip0X, q_abdHip0Y, qd_abdHip0Y, qdd_abdHip0Y,
-//			tau_abdHip0Y;
+	public YoDouble tau_abdHip0X= new YoDouble("tau_abdHip0X", registry);
+	public YoDouble q_abdHip0Y= new YoDouble("q_abdHip0Y", registry);
+	public YoDouble qd_abdHip0Y= new YoDouble("qd_abdHip0Y", registry);
+	public YoDouble qdd_abdHip0Y= new YoDouble("qdd_abdHip0Y", registry);
+	public YoDouble tau_abdHip0Y= new YoDouble("tau_abdHip0Y", registry);
 
 	// quadril perna 1
 
 	public YoDouble q_abdHip1X= new YoDouble("q_abdHip1X", registry);
 	public YoDouble qd_abdHip1X= new YoDouble("qd_abdHip1X", registry);
 	public YoDouble qdd_abdHip1X= new YoDouble("qdd_abdHip1X", registry);
+	public YoDouble tau_abdHip1X= new YoDouble("tau_abdHip1Y", registry);
+	public YoDouble q_abdHip1Y= new YoDouble("q_abdHip1Y", registry);
+	public YoDouble qd_abdHip1Y= new YoDouble("qd_abdHip1Y", registry);
+	public YoDouble qdd_abdHip1Y= new YoDouble("qdd_abdHip1Y", registry);
 	public YoDouble tau_abdHip1Y= new YoDouble("tau_abdHip1Y", registry);
-
-//	public YoDouble q_abdHip1X, qd_abdHip1X, qdd_abdHip1X, tau_abdHip1X, q_abdHip1Y, qd_abdHip1Y, qdd_abdHip1Y,
-//			tau_abdHip1Y;
 
 	// quadril perna 2
 
 	public YoDouble q_abdHip2X= new YoDouble("q_abdHip2X", registry);
 	public YoDouble qd_abdHip2X= new YoDouble("qd_abdHip2X", registry);
 	public YoDouble qdd_abdHip2X= new YoDouble("qdd_abdHip2X", registry);
+	public YoDouble tau_abdHip2X= new YoDouble("tau_abdHip2Y", registry);
+	public YoDouble q_abdHip2Y= new YoDouble("q_abdHip2Y", registry);
+	public YoDouble qd_abdHip2Y= new YoDouble("qd_abdHip2Y", registry);
+	public YoDouble qdd_abdHip2Y= new YoDouble("qdd_abdHip2Y", registry);
 	public YoDouble tau_abdHip2Y= new YoDouble("tau_abdHip2Y", registry);
-//	public YoDouble q_abdHip2X, qd_abdHip2X, qdd_abdHip2X, tau_abdHip2X, q_abdHip2Y, qd_abdHip2Y, qdd_abdHip2Y,
-//			tau_abdHip2Y;
 
 	// quadril perna 3
 
-	public YoDouble q_abdHip3X, qd_abdHip3X, qdd_abdHip3X, tau_abdHip3X, q_abdHip3Y, qd_abdHip3Y, qdd_abdHip3Y,
-			tau_abdHip3Y;
+	public YoDouble q_abdHip3X= new YoDouble("q_abdHip3X", registry);
+	public YoDouble qd_abdHip3X= new YoDouble("qd_abdHip3X", registry);
+	public YoDouble qdd_abdHip3X= new YoDouble("qdd_abdHip3X", registry);
+	public YoDouble tau_abdHip3X= new YoDouble("tau_abdHip3Y", registry);
+	public YoDouble q_abdHip3Y= new YoDouble("q_abdHip3Y", registry);
+	public YoDouble qd_abdHip3Y= new YoDouble("qd_abdHip3Y", registry);
+	public YoDouble qdd_abdHip3Y= new YoDouble("qdd_abdHip3Y", registry);
+	public YoDouble tau_abdHip3Y= new YoDouble("tau_abdHip3Y", registry);
 
 	// pin joints - joelhos
 

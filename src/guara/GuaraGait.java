@@ -4,10 +4,10 @@ public abstract class GuaraGait
 {
 
    /*
-    * Esta é uma classe abstrata que implementa a interface , que são os
-    * métodos e variáveis abstratas e concretas das andaduras. Cada andadura
-    * terá uma classe concreta para as variáveis e métodos abstratos
-    * necessários .
+    * Esta e uma classe abstrata que implementa a interface , que são os
+    * metodos e variaveis abstratas e concretas das andaduras. Cada andadura
+    * tera uma classe concreta para as variaveis e metodos abstratos
+    * necessarios .
     */
    double strokeColumns, strokeColumnsWith4Feet, flightColumns, totalOfColumns;
    int gaitMatrix[][];
@@ -53,10 +53,10 @@ public abstract class GuaraGait
       return name;
    }
 
-   double[] trajPata(int iPata, int iSetPoint, double x4, double y4, double z4, double deltaX)
-   {
-      return xyz;
-   };
+//   double[] trajPata(int iPata, int iSetPoint, double x4, double y4, double z4, double deltaX)
+//   {
+//      return xyz;
+//   };
 
    // double[] trajVoo(double[] vetorPatas, double x4, double y4, double z4,
    // double velRobo, double deltaX) {

@@ -53,7 +53,7 @@ public class GuaraRobot extends Robot
       Link bodyLink = body();
       rootJoint.setLink(bodyLink);
       this.addRootJoint(rootJoint);
-      bodyLink.addCoordinateSystemToCOM(0.25);
+      bodyLink.addCoordinateSystemToCOM(0.6);
       UniversalJoint abdHip0 = new UniversalJoint("abdHip0X", "abdHip0Y", new Vector3D(lRobot / 2, wRobot / 2, 0.0), this, Axis.X, Axis.Y);
       rootJoint.addJoint(abdHip0);
       Link tigh0 = thigh(0);

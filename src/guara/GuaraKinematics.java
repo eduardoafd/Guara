@@ -14,11 +14,11 @@ public class GuaraKinematics {
 
 	GuaraRobot rob;
 
-	// VariÃ¡veis
+	// Variáveis
 
-	double erro = 1.0e-15; // TolerÃ¢ncia para as funÃ§Ãµes trigonomÃ©tricas
-	double[] X; // vetor de coordenadas do tornozelo o espaÃ§o operacional XYZ
-	double[] teta; // vetor de coordenadas do tornozelo no espaÃ§o de juntas
+	double erro = 1.0e-15; // Tolerância para as funções trigonométricas
+	double[] X; // vetor de coordenadas do tornozelo o espaço operacional XYZ
+	double[] teta; // vetor de coordenadas do tornozelo no espaço de juntas
 
 	double a2,a3,a4; // links da perna
 	double x3, y3, z3; // coordenadas cartezianas do tornozelo
@@ -32,14 +32,14 @@ public class GuaraKinematics {
 
 	}
 
-	// DefiniÃ§Ã£o de mÃ©todos
+	// Definição de métodos
 
 	public double[][] DH(double a, double d, double alfa, double teta) {
 
 		/*
-		 * Matrizes DH da transformaÃ§Ã£o homogÃªnea entre links Esta listagem Ã© a
-		 * implementaÃ§Ã£o em Java do mÃ©todo DH para cÃ¡lculo da matriz de
-		 * transformaÃ§Ã£o entre links da Eq. (5).
+		 * Matrizes DH da transformação homogênea entre links Esta listagem é a
+		 * implementação em Java do método DH para cálculo da matriz de
+		 * transformação entre links da Eq. (5).
 		 */
 		double cosTeta = (Math.cos(teta) > erro || Math.cos(teta) < -erro) ? Math
 				.cos(teta) : 0.0;
@@ -78,16 +78,16 @@ public class GuaraKinematics {
 		return A;
 	}
 
-	// CinemÃ¡tica inversa: variÃ¡veis da junta 3 (tornozelo) em funÃ§Ã£o da posiÃ§Ã£o
+	// Cinemática inversa: variáveis da junta 3 (tornozelo) em função da posição
 	// [x4,y4,z4] da pata
 
 	public double[] orientacaoCI(double x4, double y4, double z4, double a4,
 			double theta1, double theta4) {
 
 		/*
-		 * A cinemÃ¡tica inversa de posiÃ§Ã£o Ã© calculada em relaÃ§Ã£o Ã  junta 3
-		 * (tornozelo). A partir das coordenadas da pata [x4,y4,z4] obÃ©m-se
-		 * entÃ£o as coordenadas da junta 3 [x3,y3,z3] para determinar {teta1,
+		 * A cinemática inversa de posição é calculada em relação à junta 3
+		 * (tornozelo). A partir das coordenadas da pata [x4,y4,z4] obém-se
+		 * então as coordenadas da junta 3 [x3,y3,z3] para determinar {teta1,
 		 * teta2, teta3, teta4]
 		 */
 
@@ -112,9 +112,9 @@ public class GuaraKinematics {
 	public double[] cinInv(double[] xyz) {
 
 		/*
-		 * A cinemÃ¡tica inversa de posiÃ§Ã£o Ã© calculada em relaÃ§Ã£o Ã  junta 3
-		 * (tornozelo). A partir das coordenadas da pata [x4,y4,z4] obÃ©m-se
-		 * entÃ£o as coordenadas da junta 3 [x3,y3,z3] para determinar {teta1,
+		 * A cinemática inversa de posição é calculada em relação à junta 3
+		 * (tornozelo). A partir das coordenadas da pata [x4,y4,z4] obém-se
+		 * então as coordenadas da junta 3 [x3,y3,z3] para determinar {teta1,
 		 * teta2, teta3, teta4]
 		 */
 

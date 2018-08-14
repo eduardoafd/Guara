@@ -2,9 +2,8 @@ package guara;
 
 public abstract class GuaraGait
 {
-
    /*
-    * Esta e uma classe abstrata que implementa a interface , que são os
+    * Esta e uma classe abstrata que implementa a interface , que sao os
     * metodos e variaveis abstratas e concretas das andaduras. Cada andadura
     * tera uma classe concreta para as variaveis e metodos abstratos
     * necessarios .

@@ -10,14 +10,15 @@ public class GuaraSimulation
    Thread myThread;
    double robotSpeed = 6 * 1000 / 3600; // 6 km/h
    public static final double TIME = 20.0;
+   private final GuaraRobot guara;
+   
+   public GuaraSimulation(){
 
-   public GuaraSimulation()
-   {
-
-      GuaraRobot Guara = new GuaraRobot();
-      sim = new SimulationConstructionSet(Guara);
-      //Guara.setController(new GuaraController(Guara));
-      //		System.out.println("Guara.setController");
+      guara = new GuaraRobot();
+      sim = new SimulationConstructionSet(guara);
+      GuaraController guaraController = new GuaraController(guara);
+      guara.setController(guaraController);
+      		System.out.println("Guara.setController------------------------------");
       sim.setGroundVisible(true);
       sim.setCameraTracking(false, false, false, false);
       sim.setCameraDolly(false, false, false, false);

@@ -2,10 +2,14 @@ package guara;
 
 import us.ihmc.robotics.robotController.RobotController;
 import us.ihmc.yoVariables.registry.YoVariableRegistry;
+import us.ihmc.yoVariables.variable.YoDouble;
 
-public class GuaraController extends GuaraYoVariablesDefinition implements RobotController {
 
-	public GuaraYoVariablesDefinition yo;
+
+public class GuaraController /*extends GuaraYoVariablesDefinition*/ implements RobotController {
+	private GuaraRobot rob;
+	
+//	public GuaraYoVariablesDefinition yo;
 	public GuaraWaveGait a3;
 
 	private final YoVariableRegistry registry = new YoVariableRegistry("guaraController");
@@ -16,8 +20,10 @@ public class GuaraController extends GuaraYoVariablesDefinition implements Robot
 			Kp1, Kd1, Ki1, // junta 1
 			Kp2, Kd2, Ki2, // junta 2
 			Kp3, Kd3, Ki3; // junta 3
-
-	// vari√°veis de set point = posi√ß√£o
+	
+	private YoDouble tau_flexKnee0,tau_flexKnee1,tau_flexKnee2,tau_flexKnee3,q_flexKnee0,q_flexKnee1,q_flexKnee2,q_flexKnee3;
+	
+	// vari·veis de set point = posiÁ„o
 
 	double[][] spTeta = { { 0.0, 0.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0, 0.0 },
 			{ 0.0, 0.0, 0.0, 0.0 } }; // declara e inicia
@@ -32,11 +38,27 @@ public class GuaraController extends GuaraYoVariablesDefinition implements Robot
 	// set points counter
 
 	int i = 0;
+	
+	public double thetad;
+	
+	
+	
+	public GuaraController(GuaraRobot robot){  //, String name) {
 
-	public GuaraController(GuaraRobot rob){  //, String name) {
-
-	   super(rob);
-		System.out.println("guaraController");
+	tau_flexKnee0 = (YoDouble) robot.getVariable("tau_flexKnee0");
+	tau_flexKnee1 = (YoDouble) robot.getVariable("tau_flexKnee1");
+	tau_flexKnee2 = (YoDouble) robot.getVariable("tau_flexKnee2");
+	tau_flexKnee3 = (YoDouble) robot.getVariable("tau_flexKnee3");
+	q_flexKnee0 = (YoDouble) robot.getVariable("q_flexKnee0");
+	q_flexKnee1 = (YoDouble) robot.getVariable("q_flexKnee1");
+	q_flexKnee2 = (YoDouble) robot.getVariable("q_flexKnee2");
+	q_flexKnee3 = (YoDouble) robot.getVariable("q_flexKnee3");
+		
+		
+//	   super(rob);
+//		System.out.println("guaraController");
+//	      this.name = name;
+	      this.rob = robot;
 
 		a3 = new GuaraWaveGait(128);
 		assert a3 != null;
@@ -45,7 +67,8 @@ public class GuaraController extends GuaraYoVariablesDefinition implements Robot
 
 		initControl();
 		System.out.println("saiu initcontrol");
-
+		
+//		yo = new GuaraYoVariablesDefinition();
 	}
 
 	public void initControl() {
@@ -72,7 +95,7 @@ public class GuaraController extends GuaraYoVariablesDefinition implements Robot
 		xyz[3][1] = 0.0;
 		xyz[3][2] = -0.3; // robot height with straighten kegs
 
-		// Constantes de integra√ß√£o por perna,
+		// Constantes de integraÁ„o por perna,
 		// inicialmente iguais para todas as juntas
 
 		Kp0 = 1.0;
@@ -97,9 +120,10 @@ public class GuaraController extends GuaraYoVariablesDefinition implements Robot
 
 
 	}
+	
 
 	public void doControl() {
-		// TODO Auto-generated method stub
+/*		// TODO Auto-generated method stub
 		System.out.println("doControl");
 
 		// legs' joint variables
@@ -157,9 +181,19 @@ public class GuaraController extends GuaraYoVariablesDefinition implements Robot
 				+Kp0 * (spTeta[0][0] - tetaAt[0][0]) + Kd0 * yo.qd_abdHip0X.getDoubleValue() + Ki0 * (inAt[0][0] + inAn[0][0]));
 
 		inAt[0][0] = inAn[0][0]; // last integral
-
+*/
+		System.out.println("entrou docontrol");
+		
+		//double valortau = (100.00*(rob.theta - yo.q_flexKnee0.getValueAsDouble()));
+		
+		tau_flexKnee0.set(10.00*(rob.theta - q_flexKnee0.getValueAsDouble()));
+		tau_flexKnee1.set(10.00*(rob.theta - q_flexKnee1.getValueAsDouble()));
+		tau_flexKnee2.set(10.00*(rob.theta - q_flexKnee2.getValueAsDouble()));
+		tau_flexKnee3.set(10.00*(rob.theta - q_flexKnee3.getValueAsDouble()));
+		
 		System.out.println("saiu docontrol");
 
+		
 	}
 
 	public String getDescription() {

@@ -37,7 +37,7 @@ public class GuaraController /* extends GuaraYoVariablesDefinition */ implements
    double[][] inAn = {{0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}}; // integral anterior uma perna
    double[][] inAt = {{0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}}; // integral atual uma perna
    double[][] xyz = {{0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 0.0}};// coordenadas
-   // 4
+
    // set points counter
 
    int i = 0;
@@ -159,6 +159,25 @@ public class GuaraController /* extends GuaraYoVariablesDefinition */ implements
       tetaAt[0][1] = -Math.PI / 12;
       tetaAt[0][2] = Math.PI / 12;
       tetaAt[0][3] = qd_flexAnkle0.getDoubleValue();
+
+      tau_flexHip0.set(10.00 * (rob.theta - q_flexHip0.getValueAsDouble()));
+      tau_flexKnee0.set(10.00 * (rob.theta - q_flexKnee0.getValueAsDouble()));
+      tau_flexAnkle0.set(10.00 * (rob.theta - q_flexAnkle0.getValueAsDouble()));
+
+      tau_abdHip1.set(10.00 * (rob.theta - q_abdHip1.getValueAsDouble()));
+      tau_flexHip1.set(10.00 * (rob.theta - q_flexHip1.getValueAsDouble()));
+      tau_flexKnee1.set(10.00 * (rob.theta - q_flexKnee1.getValueAsDouble()));
+      tau_flexAnkle1.set(10.00 * (rob.theta - q_flexAnkle1.getValueAsDouble()));
+
+      tau_abdHip2.set(10.00 * (rob.theta - q_abdHip2.getValueAsDouble()));
+      tau_flexHip2.set(10.00 * (rob.theta - q_flexHip2.getValueAsDouble()));
+      tau_flexKnee2.set(10.00 * (rob.theta - q_flexKnee2.getValueAsDouble()));
+      tau_flexAnkle2.set(10.00 * (rob.theta - q_flexAnkle2.getValueAsDouble()));
+
+      tau_abdHip3.set(10.00 * (rob.theta - q_abdHip3.getValueAsDouble()));
+      tau_flexHip3.set(10.00 * (rob.theta - q_flexHip3.getValueAsDouble()));
+      tau_flexKnee3.set(10.00 * (rob.theta - q_flexKnee3.getValueAsDouble()));
+      tau_flexAnkle3.set(10.00 * (rob.theta - q_flexAnkle3.getValueAsDouble()));
 
    }
 

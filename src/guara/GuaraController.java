@@ -88,6 +88,14 @@ public class GuaraController extends GuaraYoVariablesDefinition implements Robot
 		Kd3 = 1.0;
 		Ki3 = 1.0;
 
+		// start tilt
+
+	    tetaAt[0][0] = q_abdHip0X.getDoubleValue();
+	    tetaAt[0][1] = -Math.PI/12;
+	    tetaAt[0][2] = Math.PI/12;
+	    tetaAt[0][3] = q_flexAnkle0.getDoubleValue();
+
+
 	}
 
 	public void doControl() {
@@ -96,10 +104,10 @@ public class GuaraController extends GuaraYoVariablesDefinition implements Robot
 
 		// legs' joint variables
 
-		tetaAt[0][0] = q_abdHip0X.getDoubleValue();
-		tetaAt[0][1] = q_abdHip0Y.getDoubleValue();
-		tetaAt[0][2] = q_flexKnee0.getDoubleValue();
-		tetaAt[0][3] = q_flexAnkle0.getDoubleValue();
+//		tetaAt[0][0] = q_abdHip0X.getDoubleValue();
+//		tetaAt[0][1] = q_abdHip0Y.getDoubleValue();
+//		tetaAt[0][2] = q_flexKnee0.getDoubleValue();
+//		tetaAt[0][3] = q_flexAnkle0.getDoubleValue();
 
 		tetaAt[1][0] = q_abdHip1X.getDoubleValue();
 		tetaAt[1][1] = q_abdHip1Y.getDoubleValue();

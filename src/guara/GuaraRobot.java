@@ -187,7 +187,6 @@ public class GuaraRobot extends Robot
 
       thetacount = -theta;
 
-
       flexAnkle0.setInitialState(-Math.PI / 2, 0);
       flexAnkle1.setInitialState(-Math.PI / 2, 0);
       flexAnkle2.setInitialState(-Math.PI / 2, 0);
@@ -214,10 +213,23 @@ public class GuaraRobot extends Robot
       abdFlexHip1.setInitialState(phiX, 0, phiY, 0);
       abdFlexHip2.setInitialState(phiX, 0, phiY, 0);
       abdFlexHip3.setInitialState(phiX, 0, phiY, 0);
-
    }
 
-   /*
+   /**
+    * @param abdFlexHip0
+    * @param flexKnee0
+    * @param flexAnkle0
+    * @param abdFlexHip1
+    * @param flexKnee1
+    * @param flexAnkle1
+    * @param abdFlexHip2
+    * @param flexKnee2
+    * @param flexAnkle2
+    * @param abdFlexHip3
+    * @param flexKnee3
+    * @param flexAnkle3
+    */
+    /*
     * x axis is red, y axis is white, and z axis is blue.
     */
    private Link body()

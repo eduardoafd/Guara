@@ -11,7 +11,7 @@ public class GuaraSimulation
    double robotSpeed = 6 * 1000 / 3600; // 6 km/h
    public static final double TIME = 20.0;
    private final GuaraRobot guara;
-   
+
    public GuaraSimulation(){
 
       guara = new GuaraRobot();

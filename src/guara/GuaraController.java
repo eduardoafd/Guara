@@ -16,12 +16,24 @@ public class GuaraController /*extends GuaraYoVariablesDefinition*/ implements R
 
 	// constantes do controlador da perna
 
-	double Kp0, Kd0, Ki0, // junta 0
+	/*double Kp0, Kd0, Ki0, // junta 0
 			Kp1, Kd1, Ki1, // junta 1
 			Kp2, Kd2, Ki2, // junta 2
 			Kp3, Kd3, Ki3; // junta 3
+*/	
+	double k1,k2,k3,k4;
+	double kd1, kd2, kd3, kd4;
 	
-	private YoDouble tau_flexKnee0,tau_flexKnee1,tau_flexKnee2,tau_flexKnee3,q_flexKnee0,q_flexKnee1,q_flexKnee2,q_flexKnee3;
+	private YoDouble tau_abdHip0X, tau_abdHip0Y, tau_abdHip1X, tau_abdHip1Y, tau_abdHip2X, tau_abdHip2Y,
+	tau_abdHip3X, tau_abdHip3Y, q_abdHip0X, q_abdHip0Y, q_abdHip1X, q_abdHip1Y, q_abdHip2X, q_abdHip2Y, q_abdHip3X, q_abdHip3Y,
+	qd_abdHip0X, qd_abdHip0Y, qd_abdHip1X, qd_abdHip1Y, qd_abdHip2X, qd_abdHip2Y, qd_abdHip3X, qd_abdHip3Y;
+	
+	private YoDouble tau_flexKnee0,tau_flexKnee1,tau_flexKnee2,tau_flexKnee3,q_flexKnee0,q_flexKnee1,q_flexKnee2,q_flexKnee3,
+					qd_flexKnee0,qd_flexKnee1,qd_flexKnee2,qd_flexKnee3;
+	
+	private YoDouble q_flexAnkle0, q_flexAnkle1, q_flexAnkle2, q_flexAnkle3, tau_flexAnkle0, tau_flexAnkle1,
+					tau_flexAnkle2, tau_flexAnkle3, qd_flexAnkle0, qd_flexAnkle1, qd_flexAnkle2, qd_flexAnkle3;
+	
 	
 	// variáveis de set point = posição
 
@@ -44,16 +56,58 @@ public class GuaraController /*extends GuaraYoVariablesDefinition*/ implements R
 	
 	
 	public GuaraController(GuaraRobot robot){  //, String name) {
-
-	tau_flexKnee0 = (YoDouble) robot.getVariable("tau_flexKnee0");
-	tau_flexKnee1 = (YoDouble) robot.getVariable("tau_flexKnee1");
-	tau_flexKnee2 = (YoDouble) robot.getVariable("tau_flexKnee2");
-	tau_flexKnee3 = (YoDouble) robot.getVariable("tau_flexKnee3");
-	q_flexKnee0 = (YoDouble) robot.getVariable("q_flexKnee0");
-	q_flexKnee1 = (YoDouble) robot.getVariable("q_flexKnee1");
-	q_flexKnee2 = (YoDouble) robot.getVariable("q_flexKnee2");
-	q_flexKnee3 = (YoDouble) robot.getVariable("q_flexKnee3");
 		
+		tau_abdHip0X = (YoDouble) robot.getVariable("tau_abdHip0X");
+		tau_abdHip1X = (YoDouble) robot.getVariable("tau_abdHip1X");
+		tau_abdHip2X = (YoDouble) robot.getVariable("tau_abdHip2X");
+		tau_abdHip3X = (YoDouble) robot.getVariable("tau_abdHip3X");
+		q_abdHip0X = (YoDouble) robot.getVariable("q_abdHip0X");	
+		q_abdHip1X = (YoDouble) robot.getVariable("q_abdHip1X");
+		q_abdHip2X = (YoDouble) robot.getVariable("q_abdHip2X");
+		q_abdHip3X = (YoDouble) robot.getVariable("q_abdHip3X");
+		qd_abdHip0X = (YoDouble) robot.getVariable("qd_abdHip0X");	
+		qd_abdHip1X = (YoDouble) robot.getVariable("qd_abdHip1X");
+		qd_abdHip2X = (YoDouble) robot.getVariable("qd_abdHip2X");
+		qd_abdHip3X = (YoDouble) robot.getVariable("qd_abdHip3X");
+		
+		q_abdHip0Y = (YoDouble) robot.getVariable("q_abdHip0Y");	
+		q_abdHip1Y = (YoDouble) robot.getVariable("q_abdHip1Y");
+		q_abdHip2Y = (YoDouble) robot.getVariable("q_abdHip2Y");
+		qd_abdHip3Y = (YoDouble) robot.getVariable("qd_abdHip3Y");
+		qd_abdHip0Y = (YoDouble) robot.getVariable("qd_abdHip0Y");	
+		qd_abdHip1Y = (YoDouble) robot.getVariable("qd_abdHip1Y");
+		qd_abdHip2Y = (YoDouble) robot.getVariable("qd_abdHip2Y");
+		qd_abdHip3Y = (YoDouble) robot.getVariable("qd_abdHip3Y");
+		tau_abdHip0Y = (YoDouble) robot.getVariable("tau_abdHip0Y");
+		tau_abdHip1Y = (YoDouble) robot.getVariable("tau_abdHip1Y");
+		tau_abdHip2Y = (YoDouble) robot.getVariable("tau_abdHip2Y");
+		tau_abdHip3Y = (YoDouble) robot.getVariable("tau_abdHip3Y");
+				
+		q_flexKnee0 = (YoDouble) robot.getVariable("q_flexKnee0");
+		q_flexKnee1 = (YoDouble) robot.getVariable("q_flexKnee1");
+		q_flexKnee2 = (YoDouble) robot.getVariable("q_flexKnee2");
+		q_flexKnee3 = (YoDouble) robot.getVariable("q_flexKnee3");
+		qd_flexKnee0 = (YoDouble) robot.getVariable("qd_flexKnee0");
+		qd_flexKnee1 = (YoDouble) robot.getVariable("qd_flexKnee1");
+		qd_flexKnee2 = (YoDouble) robot.getVariable("qd_flexKnee2");
+		qd_flexKnee3 = (YoDouble) robot.getVariable("qd_flexKnee3");
+		tau_flexKnee0 = (YoDouble) robot.getVariable("tau_flexKnee0");
+		tau_flexKnee1 = (YoDouble) robot.getVariable("tau_flexKnee1");
+		tau_flexKnee2 = (YoDouble) robot.getVariable("tau_flexKnee2");
+		tau_flexKnee3 = (YoDouble) robot.getVariable("tau_flexKnee3");
+		
+		q_flexAnkle0 = (YoDouble) robot.getVariable("q_flexAnkle0");
+		q_flexAnkle1 = (YoDouble) robot.getVariable("q_flexAnkle1");
+		q_flexAnkle2 = (YoDouble) robot.getVariable("q_flexAnkle2");
+		q_flexAnkle3 = (YoDouble) robot.getVariable("q_flexAnkle3");
+		qd_flexAnkle0 = (YoDouble) robot.getVariable("qd_flexAnkle0");
+		qd_flexAnkle1 = (YoDouble) robot.getVariable("qd_flexAnkle1");
+		qd_flexAnkle2 = (YoDouble) robot.getVariable("qd_flexAnkle2");
+		qd_flexAnkle3 = (YoDouble) robot.getVariable("qd_flexAnkle3");
+		tau_flexAnkle0 = (YoDouble) robot.getVariable("tau_flexAnkle0");
+		tau_flexAnkle1 = (YoDouble) robot.getVariable("tau_flexAnkle1");
+		tau_flexAnkle2 = (YoDouble) robot.getVariable("tau_flexAnkle2");
+		tau_flexAnkle3 = (YoDouble) robot.getVariable("tau_flexAnkle3");
 		
 //	   super(rob);
 //		System.out.println("guaraController");
@@ -98,7 +152,7 @@ public class GuaraController /*extends GuaraYoVariablesDefinition*/ implements R
 		// Constantes de integração por perna,
 		// inicialmente iguais para todas as juntas
 
-		Kp0 = 1.0;
+		/*Kp0 = 1.0;
 		Kd0 = 1.0;
 		Ki0 = 1.0; // junta 0
 		Kp1 = 1.0; // junta 1
@@ -109,7 +163,7 @@ public class GuaraController /*extends GuaraYoVariablesDefinition*/ implements R
 		Ki2 = 2.0;
 		Kp3 = 1.0; // junta3
 		Kd3 = 1.0;
-		Ki3 = 1.0;
+		Ki3 = 1.0;*/
 
 	}
 	
@@ -175,13 +229,36 @@ public class GuaraController /*extends GuaraYoVariablesDefinition*/ implements R
 		inAt[0][0] = inAn[0][0]; // last integral
 */
 		System.out.println("entrou docontrol");
+		//counter ++;
+		k1 = 250;
+		k2 = 300;
+		k3 = -150;
+		k4 = 300;
+		kd1 = 3;
+		kd2 = 5;
+		kd3 = 5;
+		kd4 = 3;
 		
-		//double valortau = (100.00*(rob.theta - yo.q_flexKnee0.getValueAsDouble()));
+		tau_abdHip0X.set(k4*(0 - q_abdHip0X.getValueAsDouble()) + kd4*(0 - qd_abdHip0X.getValueAsDouble()));
+		tau_abdHip1X.set(k4*(0 - q_abdHip0X.getValueAsDouble()) + kd4*(0 - qd_abdHip1X.getValueAsDouble()));
+		tau_abdHip2X.set(k4*(0 - q_abdHip0X.getValueAsDouble()) + kd4*(0 - qd_abdHip2X.getValueAsDouble()));
+		tau_abdHip3X.set(k4*(0 - q_abdHip0X.getValueAsDouble()) + kd4*(0 - qd_abdHip3X.getValueAsDouble()));
 		
-		tau_flexKnee0.set(10.00*(rob.theta - q_flexKnee0.getValueAsDouble()));
-		tau_flexKnee1.set(10.00*(rob.theta - q_flexKnee1.getValueAsDouble()));
-		tau_flexKnee2.set(10.00*(rob.theta - q_flexKnee2.getValueAsDouble()));
-		tau_flexKnee3.set(10.00*(rob.theta - q_flexKnee3.getValueAsDouble()));
+		tau_abdHip0Y.set(k1*(rob.phi - q_abdHip0Y.getValueAsDouble()) + kd1*(0 - qd_abdHip0Y.getValueAsDouble()));
+		tau_abdHip1Y.set(k1*(rob.phi - q_abdHip0Y.getValueAsDouble()) + kd1*(0 - qd_abdHip1Y.getValueAsDouble()));
+		tau_abdHip2Y.set(k1*(rob.phi - q_abdHip0Y.getValueAsDouble()) + kd1*(0 - qd_abdHip2Y.getValueAsDouble()));
+		tau_abdHip3Y.set(k1*(rob.phi - q_abdHip0Y.getValueAsDouble()) + kd1*(0 - qd_abdHip3Y.getValueAsDouble()));
+		
+		tau_flexKnee0.set(k2*(rob.theta - q_flexKnee0.getValueAsDouble()) + kd2*(0 - qd_flexKnee0.getValueAsDouble()));
+		tau_flexKnee1.set(k2*(rob.theta - q_flexKnee1.getValueAsDouble()) + kd2*(0 - qd_flexKnee1.getValueAsDouble()));
+		tau_flexKnee2.set(k2*(rob.theta - q_flexKnee2.getValueAsDouble()) + kd2*(0 - qd_flexKnee2.getValueAsDouble()));
+		tau_flexKnee3.set(k2*(rob.theta - q_flexKnee3.getValueAsDouble()) + kd2*(0 - qd_flexKnee3.getValueAsDouble()));
+		
+		tau_flexAnkle0.set(k3*(rob.psi + q_flexAnkle0.getValueAsDouble()) + kd3*(0 - qd_flexAnkle0.getValueAsDouble()));
+		tau_flexAnkle1.set(k3*(rob.psi + q_flexAnkle1.getValueAsDouble()) + kd3*(0 - qd_flexAnkle1.getValueAsDouble()));
+		tau_flexAnkle2.set(k3*(rob.psi + q_flexAnkle2.getValueAsDouble()) + kd3*(0 - qd_flexAnkle2.getValueAsDouble()));
+		tau_flexAnkle3.set(k3*(rob.psi + q_flexAnkle3.getValueAsDouble()) + kd3*(0 - qd_flexAnkle3.getValueAsDouble()));
+			
 		
 		System.out.println("saiu docontrol");
 

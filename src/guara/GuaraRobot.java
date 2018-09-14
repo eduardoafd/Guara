@@ -75,8 +75,7 @@ public class GuaraRobot extends Robot
     	thetacount = -theta;
       
       rootJoint = new FloatingJoint("rootJoint", new Vector3D(0.0, 0.0, 0.0), this);
-      ((FloatingJoint) rootJoint).setPosition(0.0, 0.0, /*hThigh*/h);
-      Link bodyLink = body();
+      ((FloatingJoint) rootJoint).setPosition(0.0, 0.0, /*hThigh*/h);      Link bodyLink = body();
       rootJoint.setLink(bodyLink);
       this.addRootJoint(rootJoint);
       bodyLink.addCoordinateSystemToCOM(0.25);
@@ -93,10 +92,10 @@ public class GuaraRobot extends Robot
       Link shank0 = shank();
       flexKnee0.setLink(shank0);
       
-      PinJoint ankleFlex0 = new PinJoint("flexAnkle0", new Vector3D(0.0, 0.0, -lShankZ), this, Axis.Y);
-      flexKnee0.addJoint(ankleFlex0);
+      PinJoint flexAnkle0 = new PinJoint("flexAnkle0", new Vector3D(0.0, 0.0, -lShankZ), this, Axis.Y);
+      flexKnee0.addJoint(flexAnkle0);
       Link foot0 = foot();
-      ankleFlex0.setLink(foot0);
+      flexAnkle0.setLink(foot0);
       
    // Hip Joint setup as Universal Joint from leg 1, and follow up joints, knee and ankle
       UniversalJoint abdHip1 = new UniversalJoint("abdHip1X", "abdHip1Y", new Vector3D(-lRobot / 2, wRobot / 2, 0.0), this, Axis.X, Axis.Y);
@@ -108,10 +107,10 @@ public class GuaraRobot extends Robot
       abdHip1.addJoint(flexKnee1);
       Link shank1 = shank();
       flexKnee1.setLink(shank1);
-      PinJoint ankleFlex1 = new PinJoint("ankleFlex1", new Vector3D(0.0, 0.0, -lShankZ), this, Axis.Y);
-      flexKnee1.addJoint(ankleFlex1);
+      PinJoint flexAnkle1 = new PinJoint("flexAnkle1", new Vector3D(0.0, 0.0, -lShankZ), this, Axis.Y);
+      flexKnee1.addJoint(flexAnkle1);
       Link foot1 = foot();
-      ankleFlex1.setLink(foot1);
+      flexAnkle1.setLink(foot1);
       
    // Hip Joint setup as Universal Joint from leg 2, and follow up joints, knee and ankle
       UniversalJoint abdHip2 = new UniversalJoint("abdHip2X", "abdHip2Y", new Vector3D(-lRobot / 2, -wRobot / 2, 0.0), this, Axis.X, Axis.Y);
@@ -124,10 +123,10 @@ public class GuaraRobot extends Robot
       Link shank2 = shank();
       flexKnee2.setLink(shank2);
       
-      PinJoint ankleFlex2 = new PinJoint("ankleFlex2", new Vector3D(0.0, 0.0, -lShankZ), this, Axis.Y);
-      flexKnee2.addJoint(ankleFlex2);
+      PinJoint flexAnkle2 = new PinJoint("flexAnkle2", new Vector3D(0.0, 0.0, -lShankZ), this, Axis.Y);
+      flexKnee2.addJoint(flexAnkle2);
       Link foot2 = foot();
-      ankleFlex2.setLink(foot2);
+      flexAnkle2.setLink(foot2);
       
    // Hip Joint setup as Universal Joint from leg 3, and follow up joints, knee and ankle
       UniversalJoint abdHip3 = new UniversalJoint("abdHip3X", "abdHip3Y", new Vector3D(lRobot / 2, -wRobot / 2, 0.0), this, Axis.X, Axis.Y);
@@ -140,24 +139,40 @@ public class GuaraRobot extends Robot
       Link shank3 = shank();
       flexKnee3.setLink(shank3);
       
-      PinJoint ankleFlex3 = new PinJoint("ankleFlex3", new Vector3D(0.0, 0.0, -lShankZ), this, Axis.Y);
-      flexKnee3.addJoint(ankleFlex3);
+      PinJoint flexAnkle3 = new PinJoint("flexAnkle3", new Vector3D(0.0, 0.0, -lShankZ), this, Axis.Y);
+      flexKnee3.addJoint(flexAnkle3);
       Link foot3 = foot();
-      ankleFlex3.setLink(foot3);
+      flexAnkle3.setLink(foot3);
       
-      //Add ground contact points
+      //Add a contact points
       GroundContactPoint gc0 = new GroundContactPoint("gc0", new Vector3D(0.0, 0.0, -lFootZ), this);
-      ankleFlex0.addGroundContactPoint(gc0);
+      flexAnkle0.addGroundContactPoint(gc0);
       groundContactPoints.add(gc0);
+      GroundContactPoint gc00 = new GroundContactPoint("gc00", new Vector3D(0.0, 0.0, 0.0), this);
+      flexAnkle0.addGroundContactPoint(gc00);
+      groundContactPoints.add(gc00);
+      
       GroundContactPoint gc1 = new GroundContactPoint("gc1", new Vector3D(0.0, 0.0, -lFootZ), this);
       groundContactPoints.add(gc1);
-      ankleFlex1.addGroundContactPoint(gc1);
+      flexAnkle1.addGroundContactPoint(gc1);
+      GroundContactPoint gc11 = new GroundContactPoint("gc11", new Vector3D(0.0, 0.0, 0.0), this);
+      groundContactPoints.add(gc11);
+      flexAnkle1.addGroundContactPoint(gc11);
+      
       GroundContactPoint gc2 = new GroundContactPoint("gc2", new Vector3D(0.0, 0.0, -lFootZ), this);
-      ankleFlex2.addGroundContactPoint(gc2);
+      flexAnkle2.addGroundContactPoint(gc2);
       groundContactPoints.add(gc2);
+      GroundContactPoint gc22 = new GroundContactPoint("gc22", new Vector3D(0.0, 0.0, 0.0), this);
+      flexAnkle2.addGroundContactPoint(gc22);
+      groundContactPoints.add(gc22);
+      
       GroundContactPoint gc3 = new GroundContactPoint("gc3", new Vector3D(0.0, 0.0, -lFootZ), this);
-      ankleFlex3.addGroundContactPoint(gc3);
+      flexAnkle3.addGroundContactPoint(gc3);
       groundContactPoints.add(gc3);
+      GroundContactPoint gc33 = new GroundContactPoint("gc33", new Vector3D(0.0, 0.0, 0.0), this);
+      flexAnkle3.addGroundContactPoint(gc33);
+      groundContactPoints.add(gc33);
+      
       LinearGroundContactModel ground = new LinearGroundContactModel(this, this.getRobotsYoVariableRegistry());
       ground.setZStiffness(2000.0);
       ground.setZDamping(1500.0);
@@ -172,10 +187,10 @@ public class GuaraRobot extends Robot
      
       //Guara Ankle Joint angles
       
-      ankleFlex0.setInitialState(-Math.PI/2, 0);
-      ankleFlex1.setInitialState(-Math.PI/2, 0);
-      ankleFlex2.setInitialState(-Math.PI/2, 0);
-      ankleFlex3.setInitialState(-Math.PI/2, 0);
+      flexAnkle0.setInitialState(-Math.PI/2, 0);
+      flexAnkle1.setInitialState(-Math.PI/2, 0);
+      flexAnkle2.setInitialState(-Math.PI/2, 0);
+      flexAnkle3.setInitialState(-Math.PI/2, 0);
       
       //Guara Knee Joint Angles
 
@@ -187,10 +202,10 @@ public class GuaraRobot extends Robot
       //Guara Ankle Joint angles
       h = Math.sqrt(Math.pow(lThighZ, 2) + Math.pow(lShankZ, 2) + 2*lThighZ*lShankZ*Math.cos(thetacount));
       psi = Math.acos(lThighZ*Math.sin(thetacount)/h) ;
-      ankleFlex0.setInitialState(-psi, 0);
-      ankleFlex1.setInitialState(-psi, 0);
-      ankleFlex2.setInitialState(-psi, 0);
-      ankleFlex3.setInitialState(-psi, 0);
+      flexAnkle0.setInitialState(-psi, 0);
+      flexAnkle1.setInitialState(-psi, 0);
+      flexAnkle2.setInitialState(-psi, 0);
+      flexAnkle3.setInitialState(-psi, 0);
       
       //Guara Hip Joint Y axis rotation angles
       phi = Math.asin(lShankZ*Math.sin(thetacount)/h);

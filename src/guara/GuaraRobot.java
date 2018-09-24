@@ -80,7 +80,7 @@ public class GuaraRobot extends Robot
       thetacount = -theta;*/
 
       rootJoint = new FloatingJoint("rootJoint", new Vector3D(0.0, 0.0, 0.0), this);
-      ((FloatingJoint) rootJoint).setPosition(0.0, 0.0, /* hThigh */h);
+      ((FloatingJoint) rootJoint).setPosition(0.0, 0.0, /* hThigh */h*2);
       Link bodyLink = body();
       rootJoint.setLink(bodyLink);
       this.addRootJoint(rootJoint);
@@ -177,42 +177,42 @@ public class GuaraRobot extends Robot
       //Guara Ankle Joint angles; these should go to InitControl method
 
       //I have to previously define theta
-      theta = Math.PI / 10;
-
-      h = Math.sqrt(2 * lThighZ * lShankZ * Math.cos(theta) + Math.pow(lThighZ, 2) + Math.pow(lShankZ, 2));
-      phiY = Math.asin(lShankZ * Math.sin(theta) / h); //PhiY will be the abdFlexHip joint Y axis angle of rotation
-      phiX = Math.PI / 12; //PhiX will be the abdFlexHip joint X axis angle of rotation
-      theta = -Math.PI / 4;   //Theta will be the flexKnee joint rotation angle
-      psi = Math.acos((lThighZ) * Math.sin(theta) / h); // Psi will be the Ankle joint angle of rotation
-
-      thetacount = -theta;
-
-      flexAnkle0.setInitialState(-Math.PI / 2, 0);
-      flexAnkle1.setInitialState(-Math.PI / 2, 0);
-      flexAnkle2.setInitialState(-Math.PI / 2, 0);
-      flexAnkle3.setInitialState(-Math.PI / 2, 0);
-
-      //Guara Knee Joint Angles
-
-      flexKnee0.setInitialState(theta, 0);
-      flexKnee1.setInitialState(theta, 0);
-      flexKnee2.setInitialState(theta, 0);
-      flexKnee3.setInitialState(theta, 0);
-
-      //Guara Ankle Joint angles
-      h = Math.sqrt(Math.pow(lThighZ, 2) + Math.pow(lShankZ, 2) + 2 * lThighZ * lShankZ * Math.cos(thetacount));
-      psi = Math.acos(lThighZ * Math.sin(thetacount) / h);
-      flexAnkle0.setInitialState(-psi, 0);
-      flexAnkle1.setInitialState(-psi, 0);
-      flexAnkle2.setInitialState(-psi, 0);
-      flexAnkle3.setInitialState(-psi, 0);
-
-      //Guara Hip Joint Y axis rotation angles
-      phiY = Math.asin(lShankZ * Math.sin(thetacount) / h);
-      abdFlexHip0.setInitialState(phiX, 0, phiY, 0);
-      abdFlexHip1.setInitialState(phiX, 0, phiY, 0);
-      abdFlexHip2.setInitialState(phiX, 0, phiY, 0);
-      abdFlexHip3.setInitialState(phiX, 0, phiY, 0);
+//      theta = Math.PI / 10;
+//
+//      h = Math.sqrt(2 * lThighZ * lShankZ * Math.cos(theta) + Math.pow(lThighZ, 2) + Math.pow(lShankZ, 2));
+//      phiY = Math.asin(lShankZ * Math.sin(theta) / h); //PhiY will be the abdFlexHip joint Y axis angle of rotation
+//      phiX = Math.PI / 12; //PhiX will be the abdFlexHip joint X axis angle of rotation
+//      theta = -Math.PI / 4;   //Theta will be the flexKnee joint rotation angle
+//      psi = Math.acos((lThighZ) * Math.sin(theta) / h); // Psi will be the Ankle joint angle of rotation
+//
+//      thetacount = -theta;
+//
+//      flexAnkle0.setInitialState(-Math.PI / 2, 0);
+//      flexAnkle1.setInitialState(-Math.PI / 2, 0);
+//      flexAnkle2.setInitialState(-Math.PI / 2, 0);
+//      flexAnkle3.setInitialState(-Math.PI / 2, 0);
+//
+//      //Guara Knee Joint Angles
+//
+//      flexKnee0.setInitialState(theta, 0);
+//      flexKnee1.setInitialState(theta, 0);
+//      flexKnee2.setInitialState(theta, 0);
+//      flexKnee3.setInitialState(theta, 0);
+//
+//      //Guara Ankle Joint angles
+//      h = Math.sqrt(Math.pow(lThighZ, 2) + Math.pow(lShankZ, 2) + 2 * lThighZ * lShankZ * Math.cos(thetacount));
+//      psi = Math.acos(lThighZ * Math.sin(thetacount) / h);
+//      flexAnkle0.setInitialState(-psi, 0);
+//      flexAnkle1.setInitialState(-psi, 0);
+//      flexAnkle2.setInitialState(-psi, 0);
+//      flexAnkle3.setInitialState(-psi, 0);
+//
+//      //Guara Hip Joint Y axis rotation angles
+//      phiY = Math.asin(lShankZ * Math.sin(thetacount) / h);
+//      abdFlexHip0.setInitialState(phiX, 0, phiY, 0);
+//      abdFlexHip1.setInitialState(phiX, 0, phiY, 0);
+//      abdFlexHip2.setInitialState(phiX, 0, phiY, 0);
+//      abdFlexHip3.setInitialState(phiX, 0, phiY, 0);
    }
 
    /**

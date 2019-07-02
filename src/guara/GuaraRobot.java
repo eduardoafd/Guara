@@ -7,6 +7,7 @@ import us.ihmc.euclid.Axis;
 import us.ihmc.euclid.tuple3D.Vector3D;
 import us.ihmc.graphicsDescription.Graphics3DObject;
 import us.ihmc.graphicsDescription.appearance.YoAppearance;
+import us.ihmc.simulationconstructionset.ExternalForcePoint;
 //SimulationConstructionSet;
 import us.ihmc.simulationconstructionset.FloatingJoint;
 import us.ihmc.simulationconstructionset.GroundContactPoint;
@@ -18,9 +19,17 @@ import us.ihmc.simulationconstructionset.UniversalJoint;
 import us.ihmc.simulationconstructionset.util.LinearGroundContactModel;
 import us.ihmc.simulationconstructionset.util.ground.FlatGroundProfile;
 
-public class GuaraRobot extends Robot
-{
-	private final ArrayList<GroundContactPoint> groundContactPoints = new ArrayList();
+public class GuaraRobot extends Robot{
+	
+   private final ArrayList<GroundContactPoint> groundContactPoints = new ArrayList();
+   private final FloatingJoint rootJoint; 
+   private final UniversalJoint abdFlexHip0, abdFlexHip1, abdFlexHip2, abdFlexHip3;
+   private final PinJoint flexKnee0,  flexKnee1, flexKnee2, flexKnee3; 
+   private final PinJoint flexAnkle0,  flexAnkle1, flexAnkle2, flexAnkle3;
+   public GuaraLeg pernas[] = new GuaraLeg[4];
+   public GuaraLeg perna0, perna1, perna2, perna3;
+   
+    
    public static final double // robot's body height
    hBodyZ = 0.36;
    public static final double // body data TO VERIFY
@@ -32,7 +41,7 @@ public class GuaraRobot extends Robot
    lShankX = 0.04 / 2, lShankY = 0.06 / 3, lShankZ = 0.15, mShank = 3.6, IxxShank = inertiaMoment(lShankY, lShankZ), IyyShank = inertiaMoment(lShankX, lShankZ),
          IzzShank = inertiaMoment(lShankX, lShankY);
    public static final double // foot data TO VERIFY
-   lFootX = 0.08 / 3, lFootY = 0.06 / 3, lFootZ = 0.1, mFoot = 1.0, IxxFoot = inertiaMoment(lFootY, lFootZ), IyyFoot = inertiaMoment(lFootX, lFootZ),
+   lFootX = 0.08, lFootY = 0.06 / 3, lFootZ = 0.1, mFoot = 1.0, IxxFoot = inertiaMoment(lFootY, lFootZ), IyyFoot = inertiaMoment(lFootX, lFootZ),
          IzzFoot = inertiaMoment(lFootX, lFootY);
    public static final double // gearmotor data
    hMotor = 0.12 / 2, rMotor = 0.034 / 2;
@@ -42,152 +51,199 @@ public class GuaraRobot extends Robot
          hThigh = lThighZ + lShankZ + lFootZ, // hip
          hKnee = lShankZ + lFootZ, // knee
          hFoot = lFootZ; // ankle
-   Joint rootJoint;
 
-   //Setting Variables for guara`s posture
    /*
-    * Theta will be the Knee joint angle rotation Psi will be the Ankle joint
-    * angle of rotation Phi will be the AbduHip joint Y axis angle of rotation
-    * lThighZ equivale a l1 e lShankZ equivale a l2
+    * joint angles like in guara's wolf legs
     */
+   private double[] abdHipAngle = new double[4];
+   private double[] flexHipAngle = new double[4];
+   private double[] flexKneeAngle = new double[4];
+   private double[] flexAnkleAngle = new double[4];
+   /*
+    * controller constants
+    */
+   private double[] abduHipKP = new double[4];
+   private double[] flexHipKP = new double[4];
+   private double[] flexKneeKP = new double[4];
+   private double[] flexAnkleKP = new double[4];
+   private double[] abduHipKD = new double[4];
+   private double[] flexHipKD = new double[4];
+   private double[] flexKneeKD = new double[4];
+   private double[] flexAnkleKD = new double[4];
+   private double[][] thetaLegToPack = new double[4][4];
 
-   public double theta, thetacount, psi, phiY, phiX, h;
-
-   public GuaraRobot()
-   {
+   public double theta, thetacount, psi, phiY, phiX, h, lshank = 0.15, lthigh = 0.15;
+   
+   public ExternalForcePoint test_force;
+   
+   public GuaraRobot(){
 
       // legs are numbered: 0 front left; 1 hind left; 2 front right; 3 hind right
       super("Guara");
+      
+      h = 0.25;
+      double x3=0.1;
+      double y3=0.0;
+      double z3=-0.246;
+      double a2=0.15;
+      double a3=0.15;
+      double []theta1= new double[4];
+      theta1[0] = Math.atan2(y3,x3);
+      // cosTeta = (Math.pow(a2, 2) + Math.pow(waveGait, 2) - Math.pow(y3, 2) - Math
+      double cosTheta = (Math.pow(x3, 2) + Math.pow(y3, 2) + Math.pow(z3, 2) - Math.pow(a2, 2) - Math.pow(a3, 2)) / (2 * a2 * a3);
+      double sinTeta = cosTheta == 0 ? 1.0 : Math.sqrt((1 - Math.pow(cosTheta, 2)));
+      theta1[2] = Math.atan2(sinTeta, cosTheta);
+      double alfa = Math.atan2(a3 * sinTeta, (a2 + a3 * cosTheta));
+      double beta = Math.atan2(Math.sqrt(Math.pow(y3, 2) + Math.pow(x3, 2)), Math.sqrt(Math.pow(x3, 2) + Math.pow(z3, 2)));
+      theta1[1] = (Math.abs(z3) > Math.abs(y3)) ? beta + alfa : beta - alfa;
+      //theta[3] = theta[2] - Math.PI / 6.0;// set in robot class
 
+      
+      theta = Math.acos((Math.pow(h, 2) - Math.pow(lShankZ, 2) - Math.pow(lThighZ, 2))/(2*lShankZ*lThighZ));
+      phiY = Math.asin((0.15*Math.sin(Math.PI - theta))/h);
+      psi = (-Math.asin((0.15*Math.sin(Math.PI - theta))/h) + (Math.PI/2));
+      
+      /*theta = Math.PI / 10;
       h = Math.sqrt(2 * lThighZ * lShankZ * Math.cos(theta) + Math.pow(lThighZ, 2) + Math.pow(lShankZ, 2));
 
       //Setting Variables for guara`s posture;
-      /*
+      
        * phiX and phiY will be the abdFlexHip joint X and Y axis angle of rotation
-       * theta will be the flexKnee joint rotation angle
-       * psi will be the flexAnkle joint rotation angle
-       * lThighZ equivale a l1 e lShankZ equivale a l2
-       */
+       * thetaY will be the flexKnee joint rotation angle
+       * psiY will be the flexAnkle joint rotation angle
+       * lThighZ for l1 e lShankZ for l2
+       
 
       //I have to previously define theta
-      theta = Math.PI / 10;
+	  //theta = Math.PI / 10;
 
       phiY = Math.asin(lShankZ * Math.sin(theta) / h); //PhiY will be the abdFlexHip joint Y axis angle of rotation
       phiX = Math.PI / 12; //PhiX will be the abdFlexHip joint X axis angle of rotation
       theta = -Math.PI / 4;   //Theta will be the flexKnee joint rotation angle
       psi = Math.acos((lThighZ) * Math.sin(theta) / h); // Psi will be the Ankle joint angle of rotation
 
-      thetacount = -theta;
+      thetacount = -theta;*/
 
+     
+      
       rootJoint = new FloatingJoint("rootJoint", new Vector3D(0.0, 0.0, 0.0), this);
-
-      ((FloatingJoint) rootJoint).setPosition(0.0, 0.0, /* hThigh */h*2);
+      
+      ((FloatingJoint) rootJoint).setPosition(0.0, 0.0, h);
       Link bodyLink = body();
       rootJoint.setLink(bodyLink);
       this.addRootJoint(rootJoint);
-      bodyLink.addCoordinateSystemToCOM(0.25);
 
-   // Hip Joint setup as Universal Joint from leg 0, and follow up joints, knee and ankle
-      UniversalJoint abdFlexHip0 = new UniversalJoint("abdHip0", "flexHip0", new Vector3D(lRobot / 2, wRobot / 2, 0.0), this, Axis.X, Axis.Y);
-      rootJoint.addJoint(abdFlexHip0);
+      bodyLink.addCoordinateSystemToCOM(0.25);
+     
+      // Hip Joint setup as Universal Joint from leg 0, and follow up joints, knee and ankle
+      abdFlexHip0 = new UniversalJoint("abdHip0", "flexHip0", new Vector3D(lRobot / 2, wRobot / 2, 0.0), this, Axis.X, Axis.Y);
+      rootJoint.addJoint(abdFlexHip0);      
       Link tigh0 = thigh(0);
       abdFlexHip0.setLink(tigh0);
       tigh0.addCoordinateSystemToCOM(0.25);
+      //EXTERNAL FORCE POINT:
+      //test_force = new ExternalForcePoint("test_force", new Vector3D(0.0,0.0,0.0), this);
+      //Vector3D force = new Vector3D(0.0, 0.0, 0.0);
+      //rootJoint.addExternalForcePoint(test_force);
+      //test_force.setForce(force);
 
-      PinJoint flexKnee0 = new PinJoint("flexKnee0", new Vector3D(0.0, 0.0, -lThighZ), this, Axis.Y);
+      flexKnee0 = new PinJoint("flexKnee0", new Vector3D(0.0, 0.0, -lThighZ), this, Axis.Y);
       abdFlexHip0.addJoint(flexKnee0);
       Link shank0 = shank();
       flexKnee0.setLink(shank0);
-      shank0.addCoordinateSystemToCOM(0.25);
-      
-      PinJoint flexAnkle0 = new PinJoint("flexAnkle0", new Vector3D(0.0, 0.0, -lShankZ), this, Axis.Y);
+      //      shank0.addCoordinateSystemToCOM(0.25);
+
+      flexAnkle0 = new PinJoint("flexAnkle0", new Vector3D(0.0, 0.0, -lShankZ), this, Axis.Y);
       flexKnee0.addJoint(flexAnkle0);
       Link foot0 = foot();
       flexAnkle0.setLink(foot0);
-      foot0.addCoordinateSystemToCOM(0.25);
+      //      foot0.addCoordinateSystemToCOM(0.25);
 
-      
-   // Hip Joint setup as Universal Joint from leg 1, and follow up joints, knee and ankle
-      UniversalJoint abdFlexHip1 = new UniversalJoint("abdHip1", "flexHip1", new Vector3D(-lRobot / 2, wRobot / 2, 0.0), this, Axis.X, Axis.Y);
+      // Hip Joint setup as Universal Joint from leg 1, and follow up joints,
+      // knee and ankle
+      abdFlexHip1 = new UniversalJoint("abdHip1", "flexHip1", new Vector3D(-lRobot / 2, wRobot / 2, 0.0), this, Axis.X, Axis.Y);
       rootJoint.addJoint(abdFlexHip1);
       Link tigh1 = thigh(1);
       abdFlexHip1.setLink(tigh1);
-      tigh1.addCoordinateSystemToCOM(0.25);
+      //      tigh1.addCoordinateSystemToCOM(0.25);
 
-      PinJoint flexKnee1 = new PinJoint("flexKnee1", new Vector3D(0.0, 0.0, -lThighZ), this, Axis.Y);
+      flexKnee1 = new PinJoint("flexKnee1", new Vector3D(0.0, 0.0, -lThighZ), this, Axis.Y);
       abdFlexHip1.addJoint(flexKnee1);
       Link shank1 = shank();
       flexKnee1.setLink(shank1);
-      
-      PinJoint flexAnkle1 = new PinJoint("flexAnkle1", new Vector3D(0.0, 0.0, -lShankZ), this, Axis.Y);
+
+      flexAnkle1 = new PinJoint("flexAnkle1", new Vector3D(0.0, 0.0, -lShankZ), this, Axis.Y);
       flexKnee1.addJoint(flexAnkle1);
       Link foot1 = foot();
       flexAnkle1.setLink(foot1);
-      foot1.addCoordinateSystemToCOM(0.25);
+      //      foot1.addCoordinateSystemToCOM(0.25);
 
-   // Hip Joint setup as Universal Joint from leg 2, and follow up joints, knee and ankle
-      UniversalJoint abdFlexHip2 = new UniversalJoint("abdHip2", "flexHip2", new Vector3D(-lRobot / 2, -wRobot / 2, 0.0), this, Axis.X, Axis.Y);
+      // Hip Joint setup as Universal Joint from leg 2, and follow up joints, knee and ankle
+   
+      abdFlexHip2 = new UniversalJoint("abdHip2", "flexHip2", new Vector3D(-lRobot / 2, -wRobot / 2, 0.0), this, Axis.X, Axis.Y);
       rootJoint.addJoint(abdFlexHip2);
       Link tigh2 = thigh(2);
       abdFlexHip2.setLink(tigh2);
       tigh2.addCoordinateSystemToCOM(0.25);
 
-      PinJoint flexKnee2 = new PinJoint("flexKnee2", new Vector3D(0.0, 0.0, -lThighZ), this, Axis.Y);
+      flexKnee2 = new PinJoint("flexKnee2", new Vector3D(0.0, 0.0, -lThighZ), this, Axis.Y);
       abdFlexHip2.addJoint(flexKnee2);
       Link shank2 = shank();
       flexKnee2.setLink(shank2);
-
-      PinJoint flexAnkle2 = new PinJoint("flexAnkle2", new Vector3D(0.0, 0.0, -lShankZ), this, Axis.Y);
+      
+      
+      flexAnkle2 = new PinJoint("flexAnkle2", new Vector3D(0.0, 0.0, -lShankZ), this, Axis.Y);
       flexKnee2.addJoint(flexAnkle2);
       Link foot2 = foot();
       flexAnkle2.setLink(foot2);
-      
-   // Hip Joint setup as Universal Joint from leg 3, and follow up joints, knee and ankle
-      UniversalJoint abdFlexHip3 = new UniversalJoint("abdHip3", "flexHip3", new Vector3D(lRobot / 2, -wRobot / 2, 0.0), this, Axis.X, Axis.Y);
+
+      // Hip Joint setup as Universal Joint from leg 3, and follow up joints, knee and ankle
+      abdFlexHip3 = new UniversalJoint("abdHip3", "flexHip3", new Vector3D(lRobot / 2, -wRobot / 2, 0.0), this, Axis.X, Axis.Y);
       rootJoint.addJoint(abdFlexHip3);
       Link tigh3 = thigh(3);
       abdFlexHip3.setLink(tigh3);
 
-      PinJoint flexKnee3 = new PinJoint("flexKnee3", new Vector3D(0.0, 0.0, -lThighZ), this, Axis.Y);
+      flexKnee3 = new PinJoint("flexKnee3", new Vector3D(0.0, 0.0, -lThighZ), this, Axis.Y);
       abdFlexHip3.addJoint(flexKnee3);
       Link shank3 = shank();
       flexKnee3.setLink(shank3);
 
-      PinJoint flexAnkle3 = new PinJoint("flexAnkle3", new Vector3D(0.0, 0.0, -lShankZ), this, Axis.Y);
+      flexAnkle3 = new PinJoint("flexAnkle3", new Vector3D(0.0, 0.0, -lShankZ), this, Axis.Y);
       flexKnee3.addJoint(flexAnkle3);
       Link foot3 = foot();
       flexAnkle3.setLink(foot3);
 
-    //Add ground contact points
-
-      GroundContactPoint gcToe0 = new GroundContactPoint("gcToe", new Vector3D(0.0, 0.0, -lFootZ), this);
-      flexAnkle0.addGroundContactPoint(gcToe0);
-      groundContactPoints.add(gcToe0);
-      GroundContactPoint gcHeel0 = new GroundContactPoint("gc00", new Vector3D(0.0, 0.0, 0.0), this);
+      // Add ground contact points
+      GroundContactPoint gcHeel0 = new GroundContactPoint("gcHeel0", new Vector3D(0.0, 0.0, 0.0), this);
       flexAnkle0.addGroundContactPoint(gcHeel0);
       groundContactPoints.add(gcHeel0);
-      
-      GroundContactPoint gcToe1 = new GroundContactPoint("gc1", new Vector3D(0.0, 0.0, -lFootZ), this);
-      groundContactPoints.add(gcToe1);
-      flexAnkle1.addGroundContactPoint(gcToe1);
-      GroundContactPoint gcHeel1 = new GroundContactPoint("gc11", new Vector3D(0.0, 0.0, 0.0), this);
+      GroundContactPoint gcToe0 = new GroundContactPoint("gcToe0", new Vector3D(0.0, 0.0, -lFootZ), this);
+      flexAnkle0.addGroundContactPoint(gcToe0);
+      groundContactPoints.add(gcToe0);
+  
+      GroundContactPoint gcHeel1 = new GroundContactPoint("gcHeel1", new Vector3D(0.0, 0.0, 0.0), this);
       groundContactPoints.add(gcHeel1);
       flexAnkle1.addGroundContactPoint(gcHeel1);
+      GroundContactPoint gcToe1 = new GroundContactPoint("gcToe1", new Vector3D(0.0, 0.0, -lFootZ), this);
+      groundContactPoints.add(gcToe1);
+      flexAnkle1.addGroundContactPoint(gcToe1);
       
-      GroundContactPoint gcToe2 = new GroundContactPoint("gc2", new Vector3D(0.0, 0.0, -lFootZ), this);
-      flexAnkle2.addGroundContactPoint(gcToe2);
-      groundContactPoints.add(gcToe2);
-      GroundContactPoint gcHeel2 = new GroundContactPoint("gc22", new Vector3D(0.0, 0.0, 0.0), this);
+      GroundContactPoint gcHeel2 = new GroundContactPoint("gcHeel2", new Vector3D(0.0, 0.0, 0.0), this);
       flexAnkle2.addGroundContactPoint(gcHeel2);
       groundContactPoints.add(gcHeel2);
+      GroundContactPoint gcToe2 = new GroundContactPoint("gcToe2", new Vector3D(0.0, 0.0, -lFootZ), this);
+      flexAnkle2.addGroundContactPoint(gcToe2);
+      groundContactPoints.add(gcToe2);
       
-      GroundContactPoint gcToe3 = new GroundContactPoint("gc3", new Vector3D(0.0, 0.0, -lFootZ), this);
-      flexAnkle3.addGroundContactPoint(gcToe3);
-      groundContactPoints.add(gcToe3);
-      GroundContactPoint gcHeel3 = new GroundContactPoint("gc33", new Vector3D(0.0, 0.0, 0.0), this);
+      
+      GroundContactPoint gcHeel3 = new GroundContactPoint("gcHeel3", new Vector3D(0.0, 0.0, 0.0), this);
       flexAnkle3.addGroundContactPoint(gcHeel3);
       groundContactPoints.add(gcHeel3);
+      GroundContactPoint gcToe3 = new GroundContactPoint("gcToe3", new Vector3D(0.0, 0.0, -lFootZ), this);
+      flexAnkle3.addGroundContactPoint(gcToe3);
+      groundContactPoints.add(gcToe3);
       
+
       LinearGroundContactModel ground = new LinearGroundContactModel(this, this.getRobotsYoVariableRegistry());
       ground.setZStiffness(2000.0);
       ground.setZDamping(1500.0);
@@ -196,95 +252,142 @@ public class GuaraRobot extends Robot
       ground.setGroundProfile3D(new FlatGroundProfile());
       this.setGroundContactModel(ground);
       
-      //Guara Ankle Joint angles
       
-      flexAnkle0.setInitialState(-Math.PI/2, 0);
-      flexAnkle1.setInitialState(-Math.PI/2, 0);
-      flexAnkle2.setInitialState(-Math.PI/2, 0);
-      flexAnkle3.setInitialState(-Math.PI/2, 0);
+      
+	  perna0 = new GuaraLeg(abdFlexHip0, flexKnee0, flexAnkle0, "Perna0");
+	  perna1 = new GuaraLeg(abdFlexHip1, flexKnee1, flexAnkle1, "Perna1");
+	  perna2 = new GuaraLeg(abdFlexHip2, flexKnee2, flexAnkle2, "Perna2");
+	  perna3 = new GuaraLeg(abdFlexHip3, flexKnee3, flexAnkle3, "Perna3");
+	  pernas[0] = perna0; pernas[1] = perna1; pernas[2] = perna2; pernas[3] = perna3;
       
       //Guara Knee Joint Angles
-
-      flexKnee0.setInitialState(theta, 0);
-      flexKnee1.setInitialState(theta, 0);
-      flexKnee2.setInitialState(theta, 0);
-      flexKnee3.setInitialState(theta, 0);
+      ((PinJoint) flexKnee0).setInitialState(-theta, 0);
+      ((PinJoint) flexKnee1).setInitialState(-theta, 0);
+      ((PinJoint) flexKnee2).setInitialState(-theta, 0);
+      ((PinJoint) flexKnee3).setInitialState(-theta, 0);
       
       //Guara Ankle Joint angles
-      h = Math.sqrt(Math.pow(lThighZ, 2) + Math.pow(lShankZ, 2) + 2*lThighZ*lShankZ*Math.cos(thetacount));
-      psi = Math.acos(lThighZ*Math.sin(thetacount)/h) ;
-      flexAnkle0.setInitialState(-psi, 0);
-      flexAnkle1.setInitialState(-psi, 0);
-      flexAnkle2.setInitialState(-psi, 0);
-      flexAnkle3.setInitialState(-psi, 0);
+      /*h = Math.sqrt(Math.pow(lThighZ, 2) + Math.pow(lShankZ, 2) + 2*lThighZ*lShankZ*Math.cos(thetacount));
+      psi = Math.acos(lThighZ*Math.sin(thetacount)/h) ;*/
+      ((PinJoint) flexAnkle0).setInitialState(-psi, 0);
+      ((PinJoint) flexAnkle1).setInitialState(-psi, 0);
+      ((PinJoint) flexAnkle2).setInitialState(-psi, 0);
+      ((PinJoint) flexAnkle3).setInitialState(-psi, 0);
       
-    //Guara Hip Joint Y axis rotation angles
-      phiY = Math.asin(lShankZ*Math.sin(thetacount)/h);
-      abdFlexHip0.setInitialState(0, 0, phiY, 0);
-      abdFlexHip1.setInitialState(0, 0, phiY, 0);
-      abdFlexHip2.setInitialState(0, 0, phiY, 0);
-      abdFlexHip3.setInitialState(0, 0, phiY, 0);
+      //Guara Hip Joint Y axis rotation angles
+    /*  phiY = Math.asin(lShankZ*Math.sin(thetacount)/h);*/
+      ((UniversalJoint) abdFlexHip0).setInitialState(-Math.PI/20, 0, phiY, 0);
+      ((UniversalJoint) abdFlexHip1).setInitialState(-Math.PI/20, 0, phiY, 0);
+      ((UniversalJoint) abdFlexHip2).setInitialState(-Math.PI/20, 0, phiY, 0);
+      ((UniversalJoint) abdFlexHip3).setInitialState(-Math.PI/20, 0, phiY, 0);
+           
       
       
-//=======
-
-      //Guara Ankle Joint angles; these should go to InitControl method
-
-      //I have to previously define theta
-//      theta = Math.PI / 10;
-//
-//      h = Math.sqrt(2 * lThighZ * lShankZ * Math.cos(theta) + Math.pow(lThighZ, 2) + Math.pow(lShankZ, 2));
-//      phiY = Math.asin(lShankZ * Math.sin(theta) / h); //PhiY will be the abdFlexHip joint Y axis angle of rotation
-//      phiX = Math.PI / 12; //PhiX will be the abdFlexHip joint X axis angle of rotation
-//      theta = -Math.PI / 4;   //Theta will be the flexKnee joint rotation angle
-//      psi = Math.acos((lThighZ) * Math.sin(theta) / h); // Psi will be the Ankle joint angle of rotation
-//
-//      thetacount = -theta;
-//
-//      flexAnkle0.setInitialState(-Math.PI / 2, 0);
-//      flexAnkle1.setInitialState(-Math.PI / 2, 0);
-//      flexAnkle2.setInitialState(-Math.PI / 2, 0);
-//      flexAnkle3.setInitialState(-Math.PI / 2, 0);
-//
-//      //Guara Knee Joint Angles
-//
-//      flexKnee0.setInitialState(theta, 0);
-//      flexKnee1.setInitialState(theta, 0);
-//      flexKnee2.setInitialState(theta, 0);
-//      flexKnee3.setInitialState(theta, 0);
-//
-//      //Guara Ankle Joint angles
-//      h = Math.sqrt(Math.pow(lThighZ, 2) + Math.pow(lShankZ, 2) + 2 * lThighZ * lShankZ * Math.cos(thetacount));
-//      psi = Math.acos(lThighZ * Math.sin(thetacount) / h);
-//      flexAnkle0.setInitialState(-psi, 0);
-//      flexAnkle1.setInitialState(-psi, 0);
-//      flexAnkle2.setInitialState(-psi, 0);
-//      flexAnkle3.setInitialState(-psi, 0);
-//
-//      //Guara Hip Joint Y axis rotation angles
-//      phiY = Math.asin(lShankZ * Math.sin(thetacount) / h);
-//      abdFlexHip0.setInitialState(phiX, 0, phiY, 0);
-//      abdFlexHip1.setInitialState(phiX, 0, phiY, 0);
-//      abdFlexHip2.setInitialState(phiX, 0, phiY, 0);
-//      abdFlexHip3.setInitialState(phiX, 0, phiY, 0);
-//>>>>>>> master
    }
 
    /**
-    * @param abdFlexHip0
-    * @param flexKnee0
-    * @param flexAnkle0
-    * @param abdFlexHip1
-    * @param flexKnee1
-    * @param flexAnkle1
-    * @param abdFlexHip2
-    * @param flexKnee2
-    * @param flexAnkle2
-    * @param abdFlexHip3
-    * @param flexKnee3
-    * @param flexAnkle3
+    * next lines code should go to a gait class
     */
-    /*
+   public void legsLikeInGuaraWolf()
+   {
+      /*
+       * robot legs like in guara wolf
+       */
+      abdHipAngle[0] = 0.0;
+      abdHipAngle[1] = 0.0;
+      abdHipAngle[2] = 0.0;
+      abdHipAngle[3] = 0.0;
+
+      flexHipAngle[0] = Math.PI / 12;
+      flexHipAngle[1] = Math.PI / 12;
+      flexHipAngle[2] = Math.PI / 12;
+      flexHipAngle[3] = Math.PI / 12;
+
+      flexKneeAngle[0] = Math.PI / 4;
+      flexKneeAngle[1] = Math.PI / 4;
+      flexKneeAngle[2] = Math.PI / 4;
+      flexKneeAngle[3] = Math.PI / 4;
+      /*
+       * ankle joint angles
+       */
+      flexAnkleAngle[0] = (-flexHipAngle[0] + flexKneeAngle[0]) / 2;
+      flexAnkleAngle[1] = -flexHipAngle[1] - flexKneeAngle[1];
+      flexAnkleAngle[2] = -flexHipAngle[2] - flexKneeAngle[2];
+      flexAnkleAngle[3] = (-flexHipAngle[2] + flexKneeAngle[2]) / 2;
+      /*
+       * hip joint angles
+       */
+      ((UniversalJoint) abdFlexHip0).setInitialState(abdHipAngle[0], 0, flexHipAngle[0], 0);
+      ((UniversalJoint) abdFlexHip1).setInitialState(abdHipAngle[1], 0, -flexHipAngle[1], 0);
+      ((UniversalJoint) abdFlexHip2).setInitialState(abdHipAngle[2], 0, -flexHipAngle[2], 0);
+      ((UniversalJoint) abdFlexHip3).setInitialState(abdHipAngle[3], 0, flexHipAngle[3], 0);
+
+      //Knee Joint Angles
+
+      ((PinJoint) flexKnee0).setInitialState(-flexKneeAngle[0], 0);
+      ((PinJoint) flexKnee1).setInitialState(flexKneeAngle[1], 0);
+      ((PinJoint) flexKnee2).setInitialState(flexKneeAngle[2], 0);
+      ((PinJoint) flexKnee3).setInitialState(-flexKneeAngle[3], 0);
+
+      //Ankle Joint angles
+
+      ((PinJoint) flexAnkle0).setInitialState((-flexHipAngle[0] + flexKneeAngle[0]) / 2, 0);
+      ((PinJoint) flexAnkle1).setInitialState(-flexHipAngle[1] - flexKneeAngle[1], 0);
+      ((PinJoint) flexAnkle2).setInitialState(-flexHipAngle[2] - flexKneeAngle[2], 0);
+      ((PinJoint) flexAnkle3).setInitialState((-flexHipAngle[3] + flexKneeAngle[3]) / 2, 0);
+
+      //body heigth
+
+      h = lThighZ * Math.cos(flexHipAngle[0]) + lShankZ * Math.cos(flexKneeAngle[0] - flexHipAngle[0]) + lFootX * Math.cos(-flexHipAngle[0]);
+
+      //set floating joint position
+      ((FloatingJoint) rootJoint).setPosition(0.0, 0.0, h);
+      /*
+       * controller constants for this configuration
+       */
+      abduHipKP[0] = 3;//10;//300;
+      abduHipKP[1] = 3;
+      abduHipKP[2] = 3;
+      abduHipKP[3] = 3;
+
+      flexHipKP[0] = 4;//4;//2;//0.2;//250;//20;//
+      flexHipKP[1] = 4;//8;//
+      flexHipKP[2] = 4;//8;
+      flexHipKP[3] = 4;
+
+      flexKneeKP[0] = 30;//60;//2400;//240;//120;//
+      flexKneeKP[1] = 60;//30;//
+      flexKneeKP[2] = 60;//30;//
+      flexKneeKP[3] = 30;//60;//2400;//240;//120;//
+
+      flexAnkleKP[0] = 20;//8;//4;
+      flexAnkleKP[1] = 40;//8;//4;
+      flexAnkleKP[2] = 40;
+      flexAnkleKP[3] = 20;
+
+      abduHipKD[0] = 0.0;//0.3;//1;//3;
+      abduHipKD[1] = 0.0;
+      abduHipKD[2] = 0.0;
+      abduHipKD[3] = 0.0;
+
+      flexHipKD[0] = 0.4;//0.8;
+      flexHipKD[1] = 0.0;
+      flexHipKD[2] = 0.0;
+      flexHipKD[3] = 0.4;//0.8;
+
+      flexKneeKD[0]= 0.5;//6.0;//1;//5;
+      flexKneeKD[1]= 0.0;
+      flexKneeKD[2]= 0.0;
+      flexKneeKD[3]= 0.5;//6.0;
+
+      flexAnkleKD[0] = 0.0;//0.5;//2;//1;//5;
+      flexAnkleKD[1] = 0.0;//0.5;//2;//1;//5;
+      flexAnkleKD[2] = 0.0;//0.5;//2;//1;//5;
+      flexAnkleKD[3] = 0.0;//0.5;//2;//1;//5;
+
+   }
+
+   /*
     * x axis is red, y axis is white, and z axis is blue.
     */
    private Link body()
@@ -294,7 +397,7 @@ public class GuaraRobot extends Robot
       ret.setComOffset(0, 0, 0);
       ret.setMomentOfInertia(IxxBody, IyyBody, IzzBody);
       Graphics3DObject linkGraphics = new Graphics3DObject();
-      linkGraphics.addCube(4 * lBodyX / 5, lBodyY, lBodyZ / 2, YoAppearance.RGBColorFrom8BitInts(180, 76, 0));
+      linkGraphics.addCube(4 * lBodyX / 5, lBodyY, lBodyZ / 2, /*YoAppearance.Transparent()*/YoAppearance.RGBColorFrom8BitInts(180, 76, 0));
       // linkGraphics.addCoordinateSystem(1);
       ret.setLinkGraphics(linkGraphics);
       // roll DOF gearmotor legs 0 and 3 is backward
@@ -317,8 +420,8 @@ public class GuaraRobot extends Robot
       return ret;
    }
 
-   private Link thigh(int legNumber)
-   {
+   private Link thigh(int legNumber) {
+	   
       Link ret = new Link("Thigh");
       ret.setMass(mThigh);
       ret.setComOffset(0, 0, lThighZ / 2);
@@ -362,7 +465,7 @@ public class GuaraRobot extends Robot
       Graphics3DObject linkGraphics = new Graphics3DObject();
       linkGraphics.identity();
       linkGraphics.translate(0, 0, -lFootZ); // feet
-      linkGraphics.addCube(lFootX, lFootY, lFootZ, YoAppearance.BlackMetalMaterial());
+      linkGraphics.addCube(lFootX / 3, lFootY, lFootZ, YoAppearance.BlackMetalMaterial());
       linkGraphics.rotate(Math.PI / 2, Axis.X);
       linkGraphics.translate(0.0, lFootZ, 0.0);
       linkGraphics.translate(0.0, 0.0, -hMotor / 2);
@@ -371,9 +474,69 @@ public class GuaraRobot extends Robot
       return ret;
    }
 
+   public UniversalJoint getAbdFlexHip0()
+   {
+      return (UniversalJoint) abdFlexHip0;
+   }
+
+   public PinJoint getFlexKnee0()
+   {
+      return (PinJoint) flexKnee0;
+   }
+
+   public PinJoint getFlexAnkle0()
+   {
+      return (PinJoint) flexAnkle0;
+   }
+
+   public UniversalJoint getAbdFlexHip1()
+   {
+      return (UniversalJoint) abdFlexHip1;
+   }
+
+   public PinJoint getFlexKnee1()
+   {
+      return (PinJoint) flexKnee1;
+   }
+
+   public PinJoint getFlexAnkle1()
+   {
+      return (PinJoint) flexAnkle1;
+   }
+
    static double inertiaMoment(double sideOne, double sideTwo)
    {
       return (Math.pow(sideOne, 2) + Math.pow(sideTwo, 2));
+   }
+
+   public UniversalJoint getAbdFlexHip2()
+   {
+      return (UniversalJoint) abdFlexHip2;
+   }
+
+   public PinJoint getFlexKnee2()
+   {
+      return (PinJoint) flexKnee2;
+   }
+
+   public PinJoint getFlexAnkle2()
+   {
+      return (PinJoint) flexAnkle2;
+   }
+
+   public UniversalJoint getAbdFlexHip3()
+   {
+      return (UniversalJoint) abdFlexHip3;
+   }
+
+   public PinJoint getFlexKnee3()
+   {
+      return (PinJoint) flexKnee3;
+   }
+
+   public PinJoint getFlexAnkle3()
+   {
+      return (PinJoint) flexAnkle3;
    }
 
    public double a2()
@@ -391,9 +554,75 @@ public class GuaraRobot extends Robot
       return lFootZ;
    }
 
-   public double theta()
+
+   public Joint getRootJoint()
    {
-      return theta;
+      return rootJoint;
    }
+
+   public double[] getAbduHipAngle()
+   {
+      return abdHipAngle;
+   }
+
+   public double[] getFlexHipAngle()
+   {
+      return flexHipAngle;
+   }
+
+   public double[] getFlexKneeAngle()
+   {
+      return flexKneeAngle;
+   }
+
+   public double[] getFlexAnkleAngle()
+   {
+      return flexAnkleAngle;
+   }
+
+   public double[] getAbduHipKP()
+   {
+      return abduHipKP;
+   }
+
+   public double[] getFlexHipKP()
+   {
+      return flexHipKP;
+   }
+
+   public double[] getFlexKneeKP()
+   {
+      return flexKneeKP;
+   }
+
+   public double[] getFlexAnkleKP()
+   {
+      return flexAnkleKP;
+   }
+
+   public double[] getAbduHipKD()
+   {
+      return abduHipKD;
+   }
+
+   public double[] getFlexHipKD()
+   {
+      return flexHipKD;
+   }
+
+   public double[] getFlexKneeKD()
+   {
+      return flexKneeKD;
+   }
+
+   public double[] getFlexAnkleKD()
+   {
+      return flexAnkleKD;
+   }
+   
+   public GuaraLeg[] getLegs(){
+      return pernas;
+   }
+
 
 }

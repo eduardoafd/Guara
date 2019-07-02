@@ -1,11 +1,12 @@
 package guara;
 
+import us.ihmc.graphicsDescription.yoGraphics.YoGraphicsListRegistry;
 import us.ihmc.simulationconstructionset.SimulationConstructionSet;
 import us.ihmc.simulationconstructionset.util.simulationRunner.BlockingSimulationRunner.SimulationExceededMaximumTimeException;
 //import us.ihmc.simulationconstructionset.util.simulationRunner.BlockingSimulationRunner.*;
 
-public class GuaraSimulation
-{
+public class GuaraSimulation{
+	
    SimulationConstructionSet sim;
    Thread myThread;
    double robotSpeed = 6 * 1000 / 3600; // 6 km/h
@@ -16,9 +17,11 @@ public class GuaraSimulation
 
       guara = new GuaraRobot();
       sim = new SimulationConstructionSet(guara);
-      GuaraController guaraController = new GuaraController(guara);
+      sim.setDT(0.0004, 10); //
+      YoGraphicsListRegistry yoGraphicsListRegistries = new YoGraphicsListRegistry();
+      GuaraController guaraController = new GuaraController(guara, yoGraphicsListRegistries);//,sim.getDT());
       guara.setController(guaraController);
-      		System.out.println("Guara.setController------------------------------");
+//      		System.out.println("Guara.setController------------------------------");
       sim.setGroundVisible(true);
       sim.setCameraTracking(false, false, false, false);
       sim.setCameraDolly(false, false, false, false);
@@ -26,10 +29,12 @@ public class GuaraSimulation
       sim.setCameraFix(0.0, 0.0, 0.8);
       // sim.setCameraTrackingVars("ef_track00_x", "ef_track00_y",
       // "ef_track00_z");
-
-      sim.setDT(0.0004, 10); //
+ 
+      //guara.gravityZ.set(-0.1);
+      
       myThread = new Thread(sim);
       myThread.start();
+ 
    }
 
 //   public boolean run(double simulationTime) throws SimulationExceededMaximumTimeException
@@ -42,6 +47,9 @@ public class GuaraSimulation
       GuaraSimulation guaraSimulation = new GuaraSimulation();
 //      guaraSimulation.run(TIME);
 ////      ThreadTools.sleepForever();
+   }
+   public double getDT(){
+      return sim.getPlaybackRealTimeRate();
    }
 
 }

@@ -290,7 +290,7 @@ public class GuaraController implements RobotController{
 		defineSetPoints2(setPoints2, setPoints1);
 		
 
-		defineSetPoints2(setPoints3, setPoints1);
+		defineSetPoints3(setPoints3, setPoints1);
 		//trajParabol(setPoints, hipToAnkle2, stepSize, numberOfSetPoints);
 		
 		//System.out.println("-----------------------SETPOINTS 2 -------------------");
@@ -365,6 +365,11 @@ public void doControl()  {
 		}
 		if(numberOfLoops > (2*(numberOfSetPoints+1)*setPointDuration + 4*leanHipDuration + 2*forwardDuration ) && numberOfLoops <=(2*(numberOfSetPoints+1)*setPointDuration + 6*leanHipDuration + 2*forwardDuration )) {
 			leanHip(Math.PI/20);
+		}
+		
+		if(numberOfLoops > (2*(numberOfSetPoints+1)*setPointDuration + 6*leanHipDuration + 2*forwardDuration )	&&	numberOfLoops <= (3*(numberOfSetPoints+1)*setPointDuration + 6*leanHipDuration + 2*forwardDuration)) {
+			pernas[1].isFlying = true;
+			moveEndPoint(pernas,setPoints3,numberOfLoops, 1000);
 		}
 		
 		
@@ -881,6 +886,7 @@ public void doControl()  {
 		//Passando o valor do primeiro setpoint, que tambem eh setpoint usado para calcular os angulos de junta para o movimento horizontal do corpo.
 		setPoints2[0][0] = -2*stepSize;	setPoints2[0][1] = -0.04432383389743616;	setPoints2[0][2] = -0.23847004473511105;
 		
+		
 		//Calculo dos parametros da Interpolacao linear.
 		dx = setPoints1[6][0] - setPoints2[0][0];
 		dz = setPoints1[6][2] - setPoints2[0][2];
@@ -894,6 +900,11 @@ public void doControl()  {
 		for(i = 1;i<6;i++) {
 			setPoints2[i][0] = setPoints2[i-1][0] + dx/6;
 			setPoints2[i][2] = a*setPoints2[i][0] + b;
+		}
+		
+		//Muda o sinal da componente y pois agora o corpo esta inclinado para o outro lado
+		for(i=0; i<(int) numberOfSetPoints; i++) {
+			setPoints2[i][1] = - setPoints2[i][1];
 		}
 		
 	}
@@ -937,11 +948,15 @@ public void doControl()  {
 		double kd_2 = 5;
 		double kd_3 = 5;
 		double kd_4 = 3;
+		staticLeg0Angles[0] = angulo;
+		staticLeg1Angles[0] = angulo;
+		staticLeg2Angles[0] = angulo;
+		staticLeg3Angles[0] = angulo;
 		
-		tau_abdHip0.set(k_4*((angulo) - q_abdHip0.getValueAsDouble()) + kd_4*(0 - qd_abdHip0.getValueAsDouble()));
-		tau_abdHip1.set(k_4*((angulo) - q_abdHip1.getValueAsDouble()) + kd_4*(0 - qd_abdHip1.getValueAsDouble()));
-		tau_abdHip2.set(k_4*((angulo) - q_abdHip2.getValueAsDouble()) + kd_4*(0 - qd_abdHip2.getValueAsDouble()));
-		tau_abdHip3.set(k_4*((angulo) - q_abdHip3.getValueAsDouble()) + kd_4*(0 - qd_abdHip3.getValueAsDouble()));
+		tau_abdHip0.set(k_4*(staticLeg0Angles[0] - q_abdHip0.getValueAsDouble()) + kd_4*(0 - qd_abdHip0.getValueAsDouble()));
+		tau_abdHip1.set(k_4*(staticLeg1Angles[0] - q_abdHip1.getValueAsDouble()) + kd_4*(0 - qd_abdHip1.getValueAsDouble()));
+		tau_abdHip2.set(k_4*(staticLeg2Angles[0] - q_abdHip2.getValueAsDouble()) + kd_4*(0 - qd_abdHip2.getValueAsDouble()));
+		tau_abdHip3.set(k_4*(staticLeg3Angles[0] - q_abdHip3.getValueAsDouble()) + kd_4*(0 - qd_abdHip3.getValueAsDouble()));
 		
 		tau_flexHip0.set(k_1*(staticLeg0Angles[1] - q_flexHip0.getValueAsDouble()) + kd_1*(0 - qd_flexHip0.getValueAsDouble()));
 		tau_flexHip1.set(k_1*(staticLeg1Angles[1] - q_flexHip1.getValueAsDouble()) + kd_1*(0 - qd_flexHip1.getValueAsDouble()));
@@ -957,6 +972,10 @@ public void doControl()  {
 		tau_flexAnkle1.set(k_3*(-rob.psi - q_flexAnkle1.getValueAsDouble()) + kd_3*(0 - qd_flexAnkle1.getValueAsDouble()));
 		tau_flexAnkle2.set(k_3*(-rob.psi - q_flexAnkle2.getValueAsDouble()) + kd_3*(0 - qd_flexAnkle2.getValueAsDouble()));
 		tau_flexAnkle3.set(k_3*(-rob.psi - q_flexAnkle3.getValueAsDouble()) + kd_3*(0 - qd_flexAnkle3.getValueAsDouble()));
+		
+		
+		
+		
 	}
 	
 	private void trajParabol(double [][]sp, double []hipToAnkle, double step, double nSPs) {

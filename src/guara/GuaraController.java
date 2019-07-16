@@ -57,6 +57,8 @@ public class GuaraController implements RobotController{
 			
 	private double numberOfSetPoints = 16;
 	
+//Variaveis utilizadas na iniciacao da andadura
+	private boolean initiateGait = true;
 	private double setPoints1[][] = new double[(int) numberOfSetPoints][3];		//SETPOINTS DO PRIMEIRO VOO DA PATA (2)
 	private double setPoints2[][] = new double[(int) numberOfSetPoints][3];		//SETPOINTS DO SEGUNDO VOO DA PATA (3)
 	private double setPoints3[][] = new double[(int) numberOfSetPoints][3];
@@ -95,6 +97,14 @@ public class GuaraController implements RobotController{
 	private final YoDouble legAngle2 = new YoDouble("legAngle2", registry);
 	private final YoDouble currentSP = new YoDouble("currentSP", registry);
 	
+//Variaveis usadas na continuacao da andadura----------------------------------
+	private double legOffSet[] = {3, 0, 2, 1};
+	private double setPointsKW23[][] = new double[(int) numberOfSetPoints][3];	//SetPoints definidos para voo das patas 2 e 3.
+	private double setPointsKW01[][] = new double[(int) numberOfSetPoints][3];	//SetPoints definidos para voo das patas 0 e 1.
+	private boolean finishedStep = false;
+	private boolean moveLegLR = false;
+	private boolean notMovingForward = true;
+	private int staticNloops, spDuration = 1000, sp;
 //-----------------------------------------------------------------------------	
 	
 	private YoDouble tau_abdHip0, tau_flexHip0, tau_abdHip1, tau_flexHip1, tau_abdHip2, tau_flexHip2, tau_abdHip3, tau_flexHip3;
@@ -291,6 +301,8 @@ public class GuaraController implements RobotController{
 		
 
 		defineSetPoints3(setPoints3, setPoints1);
+		
+		defineSetPointsKW(setPointsKW23, setPointsKW01, setPoints1);
 		//trajParabol(setPoints, hipToAnkle2, stepSize, numberOfSetPoints);
 		
 		//System.out.println("-----------------------SETPOINTS 2 -------------------");
@@ -300,6 +312,8 @@ public class GuaraController implements RobotController{
 		}
 		System.out.println("-----------------------SETPOINTS 2 -------------------");
 		*/
+		
+		
 	}
 
 	
@@ -307,27 +321,268 @@ public class GuaraController implements RobotController{
    
 
 
-public void doControl()  {
-		getAnklePositions();
-		getCOMdata();
+	private void defineSetPointsKW(double[][] setPointsKW23, double[][] setPointsKW01, double[][] ref_setPoints) {
+			//A matriz setPointsKW23 guarda os setpoints para as patas 2 e 3 enquanto a matriz setPointsKW01 guarda os setpoins para pernas 0 e 1
+			//Vamos partir do setPoint 7 dos setPoints 1, e a partir dele calcular todos os setPoints anteriores.
+			//Sabemos que o setPoint final da perna 3 eh [-0.05, -0.04432383389743616, -0.23847004473511105]
+			//Variaveis para interpolacao linar: z = a*x + b
+			double b, a, dx, dz;
+			//Passando valores do setpoint1 para o setpoint2		
+			int i;
+			for(i = 0; i< (int)numberOfSetPoints; i++) {
+				setPointsKW23[i][0] = ref_setPoints[i][0];	setPointsKW23[i][1] = ref_setPoints[i][1];	setPointsKW23[i][2] = ref_setPoints[i][2];
+			}
+			
+			//Passando o valor do primeiro setpoint, que tambem eh setpoint usado para calcular os angulos de junta para o movimento horizontal do corpo.
+			setPointsKW23[0][0] = -3*stepSize;	setPointsKW23[0][1] = -0.04432383389743616;	setPointsKW23[0][2] = -0.23847004473511105;
+			
+			
+			//Calculo dos parametros da Interpolacao linear.
+			dx = ref_setPoints[6][0] - setPointsKW23[0][0];
+			dz = ref_setPoints[6][2] - setPointsKW23[0][2];
+			a = dz/dx;
+			b = ref_setPoints[6][2] - ref_setPoints[6][0]*a;
+			
+			//Calculo dos setpoints, posicoes 1 ate 5 na matriz de setpoints2 (ou seja 5 setpoints pois a posicao 0 ja foi definida)
+			//dx/6 eh o intervalo entre cada setpoint.
+			
+			
+			for(i = 1;i<6;i++) {
+				setPointsKW23[i][0] = setPointsKW23[i-1][0] + dx/6;
+				setPointsKW23[i][2] = a*setPointsKW23[i][0] + b;
+			}
+			
+			for(i = 0; i< (int)numberOfSetPoints; i++) {
+				setPointsKW01[i][0] = setPointsKW23[i][0];	setPointsKW01[i][1] = setPointsKW23[i][1];	setPointsKW01[i][2] = setPointsKW23[i][2];
+			}
+			
+			//Muda o sinal da componente y pois para as pernas 0 e 1 o corpo esta inclinado para o outro lado
+			for(i=0; i<(int) numberOfSetPoints; i++) {
+				setPointsKW01[i][1] = - setPointsKW01[i][1];
+			}
+			
+
+			
+		}
+
+
+	public void doControl()  {
+			getAnklePositions();
+			getCOMdata();
+			
+			
+			k1 = 250;
+			k2 = 300;
+			k3 = 150;
+			k4 = 300;
+			kd1 = 3;
+			kd2 = 5;
+			kd3 = 5;
+			kd4 = 3;
+			
+			if(initiateGait) {
+				initiateGait();
+			}
+			
+			if(initiateGait == false) {
+				keepWalking(numberOfLoops);
+			}
+			
+				
+			hipToAnkleVector(posicaoPerna, flexAnkle2, abdFlexHip2);
+			posicaoX.set(posicaoPerna[0]);
+			posicaoY.set(posicaoPerna[1]);
+			posicaoZ.set(posicaoPerna[2]);
+			nloops.set(numberOfLoops);
+			numberOfLoops++;
+			
+			rob.computeCenterOfMass(tempCOMPosition);
+			COM.set(tempCOMPosition);
+			ComPositionVector.setVector(COM.getVector3dCopy());
+		}
+
+
+	private void keepWalking(int nloops) {
 		
 		
-		k1 = 250;
-		k2 = 300;
-		k3 = 150;
-		k4 = 300;
-		kd1 = 3;
-		kd2 = 5;
-		kd3 = 5;
-		kd4 = 3;
 		
+		moveLeg();
+		
+		moveForward();
+		
+		if(finishedStep) {
+			//SE TERMINOU O PASSO + MOVIMENTO HORIZONTAL
+			if(pernas[0].isFlying) {
+				legOffSet[0] = 0;	legOffSet[1] = 1;	legOffSet[2] = 3;	legOffSet[3] = 2;	//Cada variavel recebe o offset futuro da perna
+				pernas[0].isFlying = false;
+				pernas[2].isFlying = true;
+				redefineLegAngles(2);
+			}
+			if(pernas[1].isFlying) {
+				legOffSet[0] = 1;	legOffSet[1] = 2;	legOffSet[2] = 0;	legOffSet[3] = 3;	//Cada variavel recebe o offset futuro da perna	
+				pernas[1].isFlying = false;
+				pernas[0].isFlying = true;
+				redefineLegAngles(0);
+			}
+			if(pernas[2].isFlying) {
+				legOffSet[0] = 2;	legOffSet[1] = 3;	legOffSet[2] = 1;	legOffSet[3] = 0;	//Cada variavel recebe o offset futuro da perna
+				pernas[2].isFlying = false;
+				pernas[3].isFlying = true;
+				redefineLegAngles(3);
+			}
+			if(pernas[3].isFlying) {
+				legOffSet[0] = 3;	legOffSet[1] = 0;	legOffSet[2] = 2;	legOffSet[3] = 1;	//Cada variavel recebe o offset futuro da perna
+				pernas[3].isFlying = false;
+				pernas[1].isFlying = true;
+				redefineLegAngles(1);
+			}
+			
+			moveLegLR = false;
+			finishedStep = false;
+			
+		}
+		
+	}
+	
+
+
+	private void moveForward() {
+		if(!notMovingForward) {
+			
+		}
+	}
+
+
+	private void moveLeg() {
+	//Essa funcao controla a pata que realiza o voo.
+		if(notMovingForward) {
+			double angles0[] = new double[3];
+			double angles1[] = new double[3];
+			double angles2[] = new double[3];
+			double setpoints[][] = new double[(int) numberOfSetPoints][3];
+			int legNum=0;
+			int a[] = new int[3];
+			
+			//Recebe o primeiro loop
+			if(!moveLegLR) {
+				staticNloops = numberOfLoops;
+				sp = 0;
+				moveLegLR = true;
+			}
+			
+			//Descobre qual pata realiza voo
+			for(int i = 0; i< pernas.length;i++) {
+				if(pernas[i].isFlying == true) {
+					legNum = i;
+				}
+				if(legNum==1 || legNum==0) {
+					setpoints = setPointsKW01.clone();
+				}else {
+					setpoints = setPointsKW23.clone();
+				}
+			}
+			//A rotina SWITCH apenas permite saber quais sao as outras 3 patas que nao realizam voo o colocam-nas em um vetor a[] em ordem e com isso define os angulos de cada perna de apoio
+			switch (legNum) {
+				case 0:
+					a[0] = 1;a[1] = 2;a[2] = 3;
+					angles0[0] = staticLeg1Angles[0];	angles0[1] = staticLeg1Angles[1];	angles0[2] = staticLeg1Angles[2];
+					angles1[0] = staticLeg2Angles[0];	angles1[1] = staticLeg2Angles[1];	angles1[2] = staticLeg2Angles[2];
+					angles2[0] = staticLeg3Angles[0];	angles2[1] = staticLeg3Angles[1];	angles2[2] = staticLeg3Angles[2];
+					break;
+				case 1:
+					a[0] = 0;a[1] = 2;a[2] = 3;
+					angles0[0] = staticLeg0Angles[0];	angles0[1] = staticLeg0Angles[1];	angles0[2] = staticLeg0Angles[2];
+					angles1[0] = staticLeg2Angles[0];	angles1[1] = staticLeg2Angles[1];	angles1[2] = staticLeg2Angles[2];
+					angles2[0] = staticLeg3Angles[0];	angles2[1] = staticLeg3Angles[1];	angles2[2] = staticLeg3Angles[2];
+					break;
+				case 2:
+					a[0] = 0;a[1] = 1;a[2] = 3;
+					angles0[0] = staticLeg0Angles[0];	angles0[1] = staticLeg0Angles[1];	angles0[2] = staticLeg0Angles[2];
+					angles1[0] = staticLeg1Angles[0];	angles1[1] = staticLeg1Angles[1];	angles1[2] = staticLeg1Angles[2];
+					angles2[0] = staticLeg3Angles[0];	angles2[1] = staticLeg3Angles[1];	angles2[2] = staticLeg3Angles[2];
+					break;
+				case 3:
+					a[0] = 0;a[1] = 1;a[2] = 2;
+					angles0[0] = staticLeg0Angles[0];	angles0[1] = staticLeg0Angles[1];	angles0[2] = staticLeg0Angles[2];
+					angles1[0] = staticLeg1Angles[0];	angles1[1] = staticLeg1Angles[1];	angles1[2] = staticLeg1Angles[2];
+					angles2[0] = staticLeg2Angles[0];	angles2[1] = staticLeg2Angles[1];	angles2[2] = staticLeg2Angles[2];
+					break;	
+			}
+			
+			//Agora vamos definir qual o angulo da pata, primeiro definindo o setpoint
+			if((numberOfLoops-staticNloops)%spDuration == 0) {
+				sp++;
+				pernas[legNum].InverseKinematics(setpoints[sp], flyingLegAngles);
+				if(sp == (int)numberOfSetPoints && numberOfLoops==(numberOfSetPoints*spDuration)) {
+					sp = 0;
+					finishedStep = true;
+					moveLegLR = false;
+					notMovingForward = false;
+				}
+			}	
+			
+			disableGCP();
+			
+			//Controle da Junta Abdutora do Quadril
+			pernas[legNum].HipJoint.getFirstJoint().setTau(k4*(flyingLegAngles[0] - pernas[legNum].HipJoint.getFirstJoint().getQ()) + kd4*(0 - pernas[legNum].HipJoint.getFirstJoint().getQD()));
+			pernas[a[0]].HipJoint.getFirstJoint().setTau(k4*(angles0[0] - pernas[a[0]].HipJoint.getFirstJoint().getQ()) + kd4*(0 - pernas[a[0]].HipJoint.getQD()));
+			pernas[a[1]].HipJoint.getFirstJoint().setTau(k4*(angles1[0] - pernas[a[1]].HipJoint.getFirstJoint().getQ()) + kd4*(0 - pernas[a[1]].HipJoint.getQD()));
+			pernas[a[2]].HipJoint.getFirstJoint().setTau(k4*(angles2[0] - pernas[a[2]].HipJoint.getFirstJoint().getQ()) + kd4*(0 - pernas[a[2]].HipJoint.getQD()));
+			
+			//Controle da Junta Flexora do Quadril
+			erro_qHip.set(flyingLegAngles[1] - q_flexHip2.getValueAsDouble()); erro_qdHip.set(0 - qd_flexHip2.getValueAsDouble());
+			pernas[legNum].HipJoint.getSecondJoint().setTau(10*(flyingLegAngles[1] - pernas[legNum].HipJoint.getSecondJoint().getQ()) + 3*(0 - pernas[legNum].HipJoint.getSecondJoint().getQD()));	
+			pernas[a[0]].HipJoint.getSecondJoint().setTau(k1*(angles0[1] - pernas[a[0]].HipJoint.getSecondJoint().getQ()) + kd1*(0 - pernas[a[0]].HipJoint.getSecondJoint().getQD()));
+			pernas[a[1]].HipJoint.getSecondJoint().setTau(k1*(angles1[1] - pernas[a[1]].HipJoint.getSecondJoint().getQ()) + kd1*(0 - pernas[a[1]].HipJoint.getSecondJoint().getQD()));
+			pernas[a[2]].HipJoint.getSecondJoint().setTau(k1*(angles2[1] - pernas[a[2]].HipJoint.getSecondJoint().getQ()) + kd1*(0 - pernas[a[2]].HipJoint.getSecondJoint().getQD()));
+			
+			//Controle da Junta Flexora do Joelho
+			erro_qKnee.set(flyingLegAngles[2] - q_flexKnee2.getValueAsDouble()); erro_qdKnee.set(0 - qd_flexKnee2.getValueAsDouble());
+			pernas[legNum].KneeJoint.setTau(15*(flyingLegAngles[2] - pernas[legNum].KneeJoint.getQ()) + 3*(0 - pernas[legNum].KneeJoint.getQD()));
+			pernas[a[0]].KneeJoint.setTau(k2*(angles0[2] - pernas[a[0]].KneeJoint.getQ()) + kd2*(0 - pernas[a[0]].KneeJoint.getQD()));
+			pernas[a[1]].KneeJoint.setTau(k2*(angles1[2] - pernas[a[1]].KneeJoint.getQ()) + kd2*(0 - pernas[a[1]].KneeJoint.getQD()));
+			pernas[a[2]].KneeJoint.setTau(k2*(angles2[2] - pernas[a[2]].KneeJoint.getQ()) + kd2*(0 - pernas[a[2]].KneeJoint.getQD()));
+			
+			//Controle da Junta Flexora do Tornozelo
+			pernas[legNum].AnkleJoint.setTau(k3*(-rob.psi - pernas[legNum].AnkleJoint.getQ()) + kd3*(0 - pernas[legNum].AnkleJoint.getQD()));
+			pernas[a[0]].AnkleJoint.setTau(k3*(-rob.psi - pernas[a[0]].AnkleJoint.getQ()) + kd3*(0 - pernas[a[0]].AnkleJoint.getQD()));
+			pernas[a[1]].AnkleJoint.setTau(k3*(-rob.psi - pernas[a[1]].AnkleJoint.getQ()) + kd3*(0 - pernas[a[1]].AnkleJoint.getQD()));
+			pernas[a[2]].AnkleJoint.setTau(k3*(-rob.psi - pernas[a[2]].AnkleJoint.getQ()) + kd3*(0 - pernas[a[2]].AnkleJoint.getQD()));
+			
+		}
+	}
+
+
+	private void redefineLegAngles(int fleg) {
+		//RECEBE A PERNA QUE REALIZARA O VOO E DEFINE OS ANGULOS DE CADA PERNA EM APOIO.
+		double aux[] = new double[3];
+		
+		aux = staticLeg0Angles.clone();
+		staticLeg0Angles = staticLeg1Angles.clone();
+		staticLeg1Angles = staticLeg3Angles.clone();
+		staticLeg3Angles = staticLeg2Angles.clone();
+		staticLeg2Angles = aux.clone();
+		//Muda o angulo da 
+		if(fleg == 2 || fleg == 1) {
+			staticLeg0Angles[1] = -staticLeg0Angles[1];
+			staticLeg1Angles[1] = -staticLeg1Angles[1];
+			staticLeg2Angles[1] = -staticLeg2Angles[1];
+			staticLeg3Angles[1] = -staticLeg3Angles[1];
+		}
+			
+	}
+
+
+	private void initiateGait() {
+		//ESSA FUNCAO REALIZA OS TRES PRIMEIROS PASSOS DA ANDADURA, PARA OS QUAIS OS ANGULOS DAS PERNAS EM APOIO SE ALTERAM A CADA PASSADA
 		
 		//INCLINACAO LATERAL DO QUADRIL
 		if(numberOfLoops < leanHipDuration) {
 			leanHip(-Math.PI/20);
 		}
 		
-		//PRIMEIRO PASSO
+		//PRIMEIRO PASSO --------------------------------------------------------------------------------------------------------
+		//-----------------------------------------------------------------------------------------------------------------------
 		if(numberOfLoops >= leanHipDuration && numberOfLoops < ((numberOfSetPoints+1)*setPointDuration + leanHipDuration)) {
 			pernas[2].isFlying = true;
 			moveEndPoint(pernas, setPoints1, numberOfLoops, 1000);		
@@ -345,7 +600,8 @@ public void doControl()  {
 			
 		}
 		
-		//SEGUNDO PASSO
+		//SEGUNDO PASSO  --------------------------------------------------------------------------------------------------------
+		//-----------------------------------------------------------------------------------------------------------------------
 		if(numberOfLoops > ((numberOfSetPoints+1)*setPointDuration + leanHipDuration + forwardDuration) && numberOfLoops <= (2*(numberOfSetPoints+1)*setPointDuration + leanHipDuration + forwardDuration)) {
 			pernas[3].isFlying = true;
 			moveEndPoint(pernas, setPoints2, numberOfLoops, 1000);
@@ -367,28 +623,25 @@ public void doControl()  {
 			leanHip(Math.PI/20);
 		}
 		
+		//TERCEIRO PASSO --------------------------------------------------------------------------------------------------------
+		//-----------------------------------------------------------------------------------------------------------------------
 		if(numberOfLoops > (2*(numberOfSetPoints+1)*setPointDuration + 6*leanHipDuration + 2*forwardDuration )	&&	numberOfLoops <= (3*(numberOfSetPoints+1)*setPointDuration + 6*leanHipDuration + 2*forwardDuration)) {
 			pernas[1].isFlying = true;
 			moveEndPoint(pernas,setPoints3,numberOfLoops, 1000);
 		}
-		
-		
-			
-		hipToAnkleVector(posicaoPerna, flexAnkle2, abdFlexHip2);
-		posicaoX.set(posicaoPerna[0]);
-		posicaoY.set(posicaoPerna[1]);
-		posicaoZ.set(posicaoPerna[2]);
-		nloops.set(numberOfLoops);
-		numberOfLoops++;
-		
-		rob.computeCenterOfMass(tempCOMPosition);
-		COM.set(tempCOMPosition);
-		ComPositionVector.setVector(COM.getVector3dCopy());
+		if(numberOfLoops > (3*(numberOfSetPoints+1)*setPointDuration + 6*leanHipDuration + 2*forwardDuration)	&&	numberOfLoops <= (3*(numberOfSetPoints+1)*setPointDuration + 6*leanHipDuration + 3*forwardDuration) ) {
+			moveBodyForward(pernas);
+			if(numberOfLoops == (3*(numberOfSetPoints+1)*setPointDuration + 6*leanHipDuration + 3*forwardDuration) ) {
+				pernas[1].isFlying = false;
+				currentSetPoint = 0;
+				initiateGait = false; //AO CHEGAR NESSE PONTO A FUNCAO INITIATEGAIT() PARA DE SER CHAMADA
+				pernas[0].isFlying = true;
+			}
+		}
 	}
 
 
 	private void moveBodyForward(GuaraLeg []legs) {
-				
 		
 		if(legs[0].isFlying == true) {
 			//step4Forward(pernas); //Quarto Passo
@@ -490,7 +743,7 @@ public void doControl()  {
 	}
 	
 	private void step3Forward(GuaraLeg []legs) {
-		//A perna 1 anda 1 stepsize para frente e vai para a posicao origial. A perna 2 muda a inclinacao para 2 steps. A perna 3 inclina para 1 step para tras
+		//A perna 1 anda 1 stepsize para tras e vai para a posicao origial. A perna 2 muda a inclinacao para 2 steps. A perna 3 inclina para 1 step para tras
 		//A perna 0 muda a inclinacao para sp[-3*stepSize, y, z], atingindo seu limite cinematico.
 		
 		double angulosPerna1[] = {0.15707963267948966/*-0.18379098411121483*/, 0.5856855434571511, -1.1713710869143021};
@@ -536,7 +789,7 @@ public void doControl()  {
 			nloopsReceived = true;
 		}
 		
-		disableGCP(legs); //Desabilita o contato do GCP (apenas) para a perna que realiza o voo	
+		disableGCP(); //Desabilita o contato do GCP (apenas) para a perna que realiza o voo	
 			
 		//A rotina if a seguir recalcula os angulos de junta para cada setPoint
 		if((firstNLoops - nloops)%spDuration == 0 && currentSetPoint < numberOfSetPoints) {
@@ -581,25 +834,25 @@ public void doControl()  {
 
 
 	
-	private void disableGCP(GuaraLeg[] legs) {
+	private void disableGCP() {
 		
-		if(legs[0].isFlying == true) {
-			legs[0].gcHeel.setNotInContact();
+		if(pernas[0].isFlying == true) {
+			pernas[0].gcHeel.setNotInContact();
 			gcp0.set(false);
 		}else {		gcp0.set(true);		}
 		
-		if(legs[1].isFlying == true) {
-			legs[1].gcHeel.setNotInContact();
+		if(pernas[1].isFlying == true) {
+			pernas[1].gcHeel.setNotInContact();
 			gcp1.set(false);
 		}else {		gcp1.set(true);		}
 		
-		if(legs[2].isFlying == true) {
-			legs[2].gcHeel.setNotInContact();
+		if(pernas[2].isFlying == true) {
+			pernas[2].gcHeel.setNotInContact();
 			gcp2.set(false);
 		}else {		gcp2.set(true);		}
 		
-		if(legs[3].isFlying == true) {
-			legs[3].gcHeel.setNotInContact();
+		if(pernas[3].isFlying == true) {
+			pernas[3].gcHeel.setNotInContact();
 			gcp3.set(false);
 		}else {		gcp3.set(true);		}
 		
@@ -872,7 +1125,7 @@ public void doControl()  {
 		
 	}
 	
-	private void defineSetPoints3(double[][] setPoints2, double[][] setPoints1) {
+	private void defineSetPoints3(double[][] setPoints, double[][] setPoints1) {
 		// Vamos partir do setPoint 7 dos setPoints 1, e a partir dele calcular todos os setPoints anteriores.
 		//Sabemos que o setPoint final da perna 3 eh [-0.05, -0.04432383389743616, -0.23847004473511105]
 		//Variaveis para interpolacao linar: z = a*x + b
@@ -880,16 +1133,16 @@ public void doControl()  {
 		//Passando valores do setpoint1 para o setpoint2		
 		int i;
 		for(i = 0; i< (int)numberOfSetPoints; i++) {
-			setPoints2[i][0] = setPoints1[i][0];	setPoints2[i][1] = setPoints1[i][1];	setPoints2[i][2] = setPoints1[i][2];
+			setPoints[i][0] = setPoints1[i][0];	setPoints[i][1] = setPoints1[i][1];	setPoints[i][2] = setPoints1[i][2];
 		}
 		
 		//Passando o valor do primeiro setpoint, que tambem eh setpoint usado para calcular os angulos de junta para o movimento horizontal do corpo.
-		setPoints2[0][0] = -2*stepSize;	setPoints2[0][1] = -0.04432383389743616;	setPoints2[0][2] = -0.23847004473511105;
+		setPoints[0][0] = -2*stepSize;	setPoints[0][1] = -0.04432383389743616;	setPoints[0][2] = -0.23847004473511105;
 		
 		
 		//Calculo dos parametros da Interpolacao linear.
-		dx = setPoints1[6][0] - setPoints2[0][0];
-		dz = setPoints1[6][2] - setPoints2[0][2];
+		dx = setPoints1[6][0] - setPoints[0][0];
+		dz = setPoints1[6][2] - setPoints[0][2];
 		a = dz/dx;
 		b = setPoints1[6][2] - setPoints1[6][0]*a;
 		
@@ -898,13 +1151,13 @@ public void doControl()  {
 		
 		
 		for(i = 1;i<6;i++) {
-			setPoints2[i][0] = setPoints2[i-1][0] + dx/6;
-			setPoints2[i][2] = a*setPoints2[i][0] + b;
+			setPoints[i][0] = setPoints[i-1][0] + dx/6;
+			setPoints[i][2] = a*setPoints[i][0] + b;
 		}
 		
 		//Muda o sinal da componente y pois agora o corpo esta inclinado para o outro lado
 		for(i=0; i<(int) numberOfSetPoints; i++) {
-			setPoints2[i][1] = - setPoints2[i][1];
+			setPoints[i][1] = - setPoints[i][1];
 		}
 		
 	}

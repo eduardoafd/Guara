@@ -103,7 +103,10 @@ public class GuaraController implements RobotController{
 	private double setPointsKW01[][] = new double[(int) numberOfSetPoints][3];	//SetPoints definidos para voo das patas 0 e 1.
 	private boolean finishedStep = false;
 	private boolean moveLegLR = false;
+	private boolean forwardLR = false;
+	private boolean leanLR = false;
 	private boolean notMovingForward = true;
+	private boolean leaned = true;
 	private int staticNloops, spDuration = 1000, sp;
 //-----------------------------------------------------------------------------	
 	
@@ -404,7 +407,9 @@ public class GuaraController implements RobotController{
 
 	private void keepWalking(int nloops) {
 		
+		int fleg=0;
 		
+		lean();
 		
 		moveLeg();
 		
@@ -415,29 +420,47 @@ public class GuaraController implements RobotController{
 			if(pernas[0].isFlying) {
 				legOffSet[0] = 0;	legOffSet[1] = 1;	legOffSet[2] = 3;	legOffSet[3] = 2;	//Cada variavel recebe o offset futuro da perna
 				pernas[0].isFlying = false;
-				pernas[2].isFlying = true;
-				redefineLegAngles(2);
+				leaned = false;
+				fleg = 2;
 			}
 			if(pernas[1].isFlying) {
 				legOffSet[0] = 1;	legOffSet[1] = 2;	legOffSet[2] = 0;	legOffSet[3] = 3;	//Cada variavel recebe o offset futuro da perna	
 				pernas[1].isFlying = false;
-				pernas[0].isFlying = true;
-				redefineLegAngles(0);
+				fleg = 0;
 			}
 			if(pernas[2].isFlying) {
 				legOffSet[0] = 2;	legOffSet[1] = 3;	legOffSet[2] = 1;	legOffSet[3] = 0;	//Cada variavel recebe o offset futuro da perna
 				pernas[2].isFlying = false;
-				pernas[3].isFlying = true;
-				redefineLegAngles(3);
+				fleg = 3;
 			}
 			if(pernas[3].isFlying) {
 				legOffSet[0] = 3;	legOffSet[1] = 0;	legOffSet[2] = 2;	legOffSet[3] = 1;	//Cada variavel recebe o offset futuro da perna
 				pernas[3].isFlying = false;
-				pernas[1].isFlying = true;
-				redefineLegAngles(1);
+				leaned = false;
+				fleg = 1;
 			}
-			
+			//DEFINE A PROXIMA PERNA A VOAR
+			switch(fleg){
+				case 0:
+					pernas[0].isFlying = true;
+					//redefineLegAngles(0);
+					break;
+				case 1:
+					pernas[1].isFlying = true;
+					//redefineLegAngles(1);
+					break;
+				case 2:
+					pernas[2].isFlying = true;
+					//redefineLegAngles(2);
+					break;
+				case 3:
+					pernas[3].isFlying = true;
+					//redefineLegAngles(3);
+					break;
+			}
 			moveLegLR = false;
+			forwardLR = false;
+			leanLR = false;
 			finishedStep = false;
 			
 		}
@@ -446,8 +469,141 @@ public class GuaraController implements RobotController{
 	
 
 
+	private void lean() {
+		if(!leaned) {
+			int fleg=0;
+			if(!leanLR) {
+				staticNloops = numberOfLoops;
+				leanLR = true;
+			}
+			for(int i = 0; i< pernas.length;i++) {
+				if(pernas[i].isFlying == true) {
+					fleg = i;
+				}
+			}
+			
+			switch(fleg) {
+				case 1:
+					if((numberOfLoops-staticNloops) <= leanHipDuration) {
+						leanHip(0.0);
+					}else {
+						leanHip(Math.PI/20);
+					}	
+					break;
+				case 2:
+					if((numberOfLoops-staticNloops) <= leanHipDuration) {
+						leanHip(0.0);
+					}else {
+						leanHip(-Math.PI/20);
+					}
+					break;
+			}
+			
+			if(2*leanHipDuration == (numberOfLoops-staticNloops)) {
+				leaned = true;
+			}
+			
+		}
+	}
+
+
 	private void moveForward() {
 		if(!notMovingForward) {
+			double angulosOff0[] = {0.15707963267948966/*-0.18379098411121483*/, 0.5856855434571511, -1.1713710869143021};
+			double angulosOff1[] = {0.15707963267948966/*-0.18379098411121483*/, 0.8029286145136825, -1.1992853145260651};
+			double angulosOff2[] = {0.15707963267948966/*-0.18379098411121483*/, 0.8973165008933564, -1.0125607640721184};
+			double angulosOff3[] = {0.15707963267948966/*-0.18379098411121483*/, 0.8693134643277585, -0.6309487034248928};
+			double angles0[] = new double[3];
+			double angles1[] = new double[3];
+			double angles2[] = new double[3];
+			int a[] = new int[3];
+			int fleg=0;
+			
+			if(!forwardLR) {
+				staticNloops = numberOfLoops;
+				forwardLR = true;
+			}
+			
+			for(int i = 0; i< pernas.length;i++) {
+				if(pernas[i].isFlying == true) {
+					fleg = i;
+				}
+			}
+			if(fleg == 2 || fleg == 3) {
+				angulosOff0[0] = -angulosOff0[0];
+				angulosOff1[0] = -angulosOff1[0];
+				angulosOff2[0] = -angulosOff2[0];
+				angulosOff3[0] = -angulosOff3[0];
+			}
+			
+			switch (fleg) {
+				case 0:
+					a[0] = 1;a[1] = 2;a[2] = 3;
+					angles0 = angulosOff1.clone();
+					angles1 = angulosOff3.clone();
+					angles2 = angulosOff2.clone();
+					staticLeg0Angles = angulosOff0.clone();
+					staticLeg1Angles = angulosOff1.clone();
+					staticLeg2Angles = angulosOff3.clone();
+					staticLeg3Angles = angulosOff2.clone();
+					break;
+				case 1:
+					a[0] = 0;a[1] = 2;a[2] = 3;
+					angles0 = angulosOff3.clone();
+					angles1 = angulosOff2.clone();
+					angles2 = angulosOff1.clone();
+					staticLeg0Angles = angulosOff3.clone();
+					staticLeg1Angles = angulosOff0.clone();
+					staticLeg2Angles = angulosOff2.clone();
+					staticLeg3Angles = angulosOff1.clone();
+					break;
+				case 2:
+					a[0] = 0;a[1] = 1;a[2] = 3;
+					angles0 = angulosOff1.clone();
+					angles1 = angulosOff2.clone();
+					angles2 = angulosOff3.clone();
+					staticLeg0Angles = angulosOff1.clone();
+					staticLeg1Angles = angulosOff2.clone();
+					staticLeg2Angles = angulosOff0.clone();
+					staticLeg3Angles = angulosOff3.clone();
+					break;
+				case 3:
+					a[0] = 0;a[1] = 1;a[2] = 2;
+					angles0 = angulosOff2.clone();
+					angles1 = angulosOff3.clone();
+					angles2 = angulosOff1.clone();
+					staticLeg0Angles = angulosOff2.clone();
+					staticLeg1Angles = angulosOff3.clone();
+					staticLeg2Angles = angulosOff1.clone();
+					staticLeg3Angles = angulosOff0.clone();
+					break;	
+			}
+						
+			pernas[fleg].HipJoint.getFirstJoint().setTau( 300*(angulosOff0[0] - pernas[fleg].HipJoint.getFirstJoint().getQ()) + 3*(0 - pernas[fleg].HipJoint.getFirstJoint().getQD()) );
+			pernas[a[0]].HipJoint.getFirstJoint().setTau( 300*(angles0[0] - pernas[a[0]].HipJoint.getFirstJoint().getQ()) + 3*(0 - pernas[a[0]].HipJoint.getFirstJoint().getQD()) );
+			pernas[a[1]].HipJoint.getFirstJoint().setTau( 300*(angles1[0] - pernas[a[1]].HipJoint.getFirstJoint().getQ()) + 3*(0 - pernas[a[1]].HipJoint.getFirstJoint().getQD()) );
+			pernas[a[2]].HipJoint.getFirstJoint().setTau( 300*(angles2[0] - pernas[a[2]].HipJoint.getFirstJoint().getQ()) + 3*(0 - pernas[a[2]].HipJoint.getFirstJoint().getQD()) );
+			
+			pernas[fleg].HipJoint.getSecondJoint().setTau( 150*(angulosOff0[1] - pernas[fleg].HipJoint.getSecondJoint().getQ()) + 3*(0 - pernas[fleg].HipJoint.getSecondJoint().getQD()) );
+			pernas[a[0]].HipJoint.getSecondJoint().setTau( 150*(angles0[1] - pernas[a[0]].HipJoint.getSecondJoint().getQ()) + 5*(0 - pernas[a[0]].HipJoint.getSecondJoint().getQD()) );
+			pernas[a[1]].HipJoint.getSecondJoint().setTau( 150*(angles1[1] - pernas[a[1]].HipJoint.getSecondJoint().getQ()) + 5*(0 - pernas[a[1]].HipJoint.getSecondJoint().getQD()) );
+			pernas[a[2]].HipJoint.getSecondJoint().setTau( 150*(angles2[1] - pernas[a[2]].HipJoint.getSecondJoint().getQ()) + 5*(0 - pernas[a[2]].HipJoint.getSecondJoint().getQD()) );
+			
+			pernas[fleg].KneeJoint.setTau( 100*(angulosOff0[2] - pernas[fleg].KneeJoint.getQ()) + 3*(0 - pernas[fleg].KneeJoint.getQD()) );
+			pernas[a[0]].KneeJoint.setTau( 150*(angles0[2] - pernas[a[0]].KneeJoint.getQ()) + 3*(0 - pernas[a[0]].KneeJoint.getQD()) );
+			pernas[a[1]].KneeJoint.setTau( 150*(angles1[2] - pernas[a[1]].KneeJoint.getQ()) + 3*(0 - pernas[a[1]].KneeJoint.getQD()) );
+			pernas[a[2]].KneeJoint.setTau( 150*(angles2[2] - pernas[a[2]].KneeJoint.getQ()) + 3*(0 - pernas[a[2]].KneeJoint.getQD()) );
+			
+			pernas[fleg].AnkleJoint.setTau( 150*(-rob.psi - pernas[fleg].AnkleJoint.getQ()) + 5*(0 - pernas[fleg].AnkleJoint.getQD()) );
+			pernas[a[0]].AnkleJoint.setTau( 150*(-rob.psi - pernas[a[0]].AnkleJoint.getQ()) + 5*(0 - pernas[a[0]].AnkleJoint.getQD()) );
+			pernas[a[1]].AnkleJoint.setTau( 150*(-rob.psi - pernas[a[1]].AnkleJoint.getQ()) + 5*(0 - pernas[a[1]].AnkleJoint.getQD()) );
+			pernas[a[2]].AnkleJoint.setTau( 150*(-rob.psi - pernas[a[2]].AnkleJoint.getQ()) + 5*(0 - pernas[a[2]].AnkleJoint.getQD()) );
+			
+			if(forwardDuration == (numberOfLoops - staticNloops)) {
+				staticNloops = 0;
+				notMovingForward = true;
+				finishedStep =true;
+			}
 			
 		}
 	}
@@ -455,7 +611,7 @@ public class GuaraController implements RobotController{
 
 	private void moveLeg() {
 	//Essa funcao controla a pata que realiza o voo.
-		if(notMovingForward) {
+		if(notMovingForward && leaned) {
 			double angles0[] = new double[3];
 			double angles1[] = new double[3];
 			double angles2[] = new double[3];
@@ -485,37 +641,41 @@ public class GuaraController implements RobotController{
 			switch (legNum) {
 				case 0:
 					a[0] = 1;a[1] = 2;a[2] = 3;
-					angles0[0] = staticLeg1Angles[0];	angles0[1] = staticLeg1Angles[1];	angles0[2] = staticLeg1Angles[2];
-					angles1[0] = staticLeg2Angles[0];	angles1[1] = staticLeg2Angles[1];	angles1[2] = staticLeg2Angles[2];
-					angles2[0] = staticLeg3Angles[0];	angles2[1] = staticLeg3Angles[1];	angles2[2] = staticLeg3Angles[2];
+					angles0 = staticLeg1Angles.clone();
+					angles1 = staticLeg2Angles.clone();
+					angles2 = staticLeg3Angles.clone();
 					break;
 				case 1:
 					a[0] = 0;a[1] = 2;a[2] = 3;
-					angles0[0] = staticLeg0Angles[0];	angles0[1] = staticLeg0Angles[1];	angles0[2] = staticLeg0Angles[2];
-					angles1[0] = staticLeg2Angles[0];	angles1[1] = staticLeg2Angles[1];	angles1[2] = staticLeg2Angles[2];
-					angles2[0] = staticLeg3Angles[0];	angles2[1] = staticLeg3Angles[1];	angles2[2] = staticLeg3Angles[2];
+					angles0 = staticLeg0Angles.clone();
+					angles1 = staticLeg2Angles.clone();
+					angles2 = staticLeg3Angles.clone();
 					break;
 				case 2:
 					a[0] = 0;a[1] = 1;a[2] = 3;
-					angles0[0] = staticLeg0Angles[0];	angles0[1] = staticLeg0Angles[1];	angles0[2] = staticLeg0Angles[2];
-					angles1[0] = staticLeg1Angles[0];	angles1[1] = staticLeg1Angles[1];	angles1[2] = staticLeg1Angles[2];
-					angles2[0] = staticLeg3Angles[0];	angles2[1] = staticLeg3Angles[1];	angles2[2] = staticLeg3Angles[2];
+					angles0 = staticLeg0Angles.clone();
+					angles1 = staticLeg1Angles.clone();
+					angles2 = staticLeg3Angles.clone();
 					break;
 				case 3:
 					a[0] = 0;a[1] = 1;a[2] = 2;
-					angles0[0] = staticLeg0Angles[0];	angles0[1] = staticLeg0Angles[1];	angles0[2] = staticLeg0Angles[2];
-					angles1[0] = staticLeg1Angles[0];	angles1[1] = staticLeg1Angles[1];	angles1[2] = staticLeg1Angles[2];
-					angles2[0] = staticLeg2Angles[0];	angles2[1] = staticLeg2Angles[1];	angles2[2] = staticLeg2Angles[2];
+					angles0 = staticLeg0Angles.clone();
+					angles1 = staticLeg1Angles.clone();
+					angles2 = staticLeg2Angles.clone();
 					break;	
 			}
 			
 			//Agora vamos definir qual o angulo da pata, primeiro definindo o setpoint
 			if((numberOfLoops-staticNloops)%spDuration == 0) {
-				sp++;
+				if(sp<(numberOfSetPoints-1)) {
+					sp++;
+				}
+				
 				pernas[legNum].InverseKinematics(setpoints[sp], flyingLegAngles);
-				if(sp == (int)numberOfSetPoints && numberOfLoops==(numberOfSetPoints*spDuration)) {
+				if(sp == ((int)numberOfSetPoints-1) && numberOfLoops==(numberOfSetPoints*spDuration + staticNloops)) {
 					sp = 0;
-					finishedStep = true;
+					staticNloops = 0;
+					//finishedStep = true;
 					moveLegLR = false;
 					notMovingForward = false;
 				}
@@ -773,10 +933,10 @@ public class GuaraController implements RobotController{
 		
 		//Ao interromper o controle que movimenta o corpo para frente, ainda serao necessarios saber os angulos de junta das pernas que permanecerao no chao no proximo passo
 		//por isso, as variaveis a seguir servirao para isso, passando os valores dos angulos para elas:
-		staticLeg0Angles[0] = angulosPerna0[0]; 		staticLeg0Angles[1] = angulosPerna0[1];		staticLeg0Angles[2] = angulosPerna0[2];
-		staticLeg1Angles[0] = angulosPerna1[0]; 		staticLeg1Angles[1] = angulosPerna1[1];		staticLeg1Angles[2] = angulosPerna1[2];
-		staticLeg2Angles[0] = angulosPerna2[0];			staticLeg2Angles[1] = angulosPerna2[1];		staticLeg2Angles[2] = angulosPerna2[2];
-		staticLeg3Angles[0] = angulosPerna3[0]; 		staticLeg3Angles[1] = angulosPerna3[1];		staticLeg3Angles[2] = angulosPerna3[2];
+		staticLeg0Angles = angulosPerna0.clone();
+		staticLeg1Angles = angulosPerna1.clone();
+		staticLeg2Angles = angulosPerna2.clone();
+		staticLeg3Angles = angulosPerna3.clone();
 		
 	}
 	
@@ -1333,10 +1493,8 @@ public class GuaraController implements RobotController{
 		x_ankle0.set(ankle0.getX());	y_ankle0.set(ankle0.getY());	z_ankle0.set(ankle0.getZ());
 		x_ankle1.set(ankle1.getX());	y_ankle1.set(ankle1.getY());	z_ankle1.set(ankle1.getZ());
 		x_ankle2.set(ankle2.getX());	y_ankle2.set(ankle2.getY());	z_ankle2.set(ankle2.getZ());
-		x_ankle3.set(ankle3.getX());	y_ankle3.set(ankle3.getY());	z_ankle3.set(ankle3.getZ());
-		
-		
+		x_ankle3.set(ankle3.getX());	y_ankle3.set(ankle3.getY());	z_ankle3.set(ankle3.getZ());		
    }
    
-   
+  
 }

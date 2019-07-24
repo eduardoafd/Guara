@@ -11,13 +11,14 @@ public class GuaraSimulation{
    Thread myThread;
    double robotSpeed = 6 * 1000 / 3600; // 6 km/h
    public static final double TIME = 20.0;
+   public static final double DT = 0.0004;
    private final GuaraRobot guara;
 
    public GuaraSimulation(){
 
       guara = new GuaraRobot();
       sim = new SimulationConstructionSet(guara);
-      sim.setDT(0.0004, 10); //
+      sim.setDT(DT, 10); //
       YoGraphicsListRegistry yoGraphicsListRegistries = new YoGraphicsListRegistry();
       GuaraController guaraController = new GuaraController(guara, yoGraphicsListRegistries);//,sim.getDT());
       guara.setController(guaraController);

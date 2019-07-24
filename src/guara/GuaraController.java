@@ -139,7 +139,12 @@ public class GuaraController implements RobotController{
 	private YoDouble y = new YoDouble("y", registry);
 	private YoDouble z = new YoDouble("z", registry);
 	Graphics3DObject centroDM = new Graphics3DObject();
-	
+	private final YoFrameVector lastLinearMomentum = new YoFrameVector("lastLinearMomentum", ReferenceFrame.getWorldFrame(), registry);
+	private final YoFrameVector lastAngularMomentum = new YoFrameVector("lastAngularMomentum", ReferenceFrame.getWorldFrame(), registry);   	
+	private final YoFrameVector rateOfChangeOfLinearMomentum = new YoFrameVector("rateOfChangeOfLinearMomentum", ReferenceFrame.getWorldFrame(), registry);
+   	private final YoFrameVector rateOfChangeOfAngularMomentum = new YoFrameVector("rateOfChangeOfAngularMomentum", ReferenceFrame.getWorldFrame(), registry);
+    private final YoFrameVector comAcceleration = new YoFrameVector("comAcceleration", ReferenceFrame.getWorldFrame(), registry);
+
 	// --------------------VARIAVEIS PARA OBTER DADOS DE POSICAO DO COM
 	private YoDouble x_ankle0 = new YoDouble("x_ankle0", registry);  private YoDouble y_ankle0 = new YoDouble("y_ankle0", registry);	private YoDouble z_ankle0 = new YoDouble("z_ankle0", registry);
 	private YoDouble x_ankle1 = new YoDouble("x_ankle1", registry);  private YoDouble y_ankle1 = new YoDouble("y_ankle1", registry);	private YoDouble z_ankle1 = new YoDouble("z_ankle1", registry);
@@ -147,6 +152,8 @@ public class GuaraController implements RobotController{
 	private YoDouble x_ankle3 = new YoDouble("x_ankle3", registry);  private YoDouble y_ankle3 = new YoDouble("y_ankle3", registry);	private YoDouble z_ankle3 = new YoDouble("z_ankle3", registry);
 	
 	//---------------------------------------------------------------------------  
+	
+
 	
 	
 	//Contadores
@@ -306,16 +313,6 @@ public class GuaraController implements RobotController{
 		defineSetPoints3(setPoints3, setPoints1);
 		
 		defineSetPointsKW(setPointsKW23, setPointsKW01, setPoints1);
-		//trajParabol(setPoints, hipToAnkle2, stepSize, numberOfSetPoints);
-		
-		//System.out.println("-----------------------SETPOINTS 2 -------------------");
-		/*int i;
-		for(i =0; i< (int) numberOfSetPoints; i++) {
-			System.out.println("SetPoint " + i + ":" + "[ " + setPoints2[i][0] + ", " + setPoints2[i][1] + ", " + setPoints2[i][2] + "]");
-		}
-		System.out.println("-----------------------SETPOINTS 2 -------------------");
-		*/
-		
 		
 	}
 
@@ -372,7 +369,7 @@ public class GuaraController implements RobotController{
 	public void doControl()  {
 			getAnklePositions();
 			getCOMdata();
-			
+			linearAndAngularMomentumRateOfChange();
 			
 			k1 = 250;
 			k2 = 300;
@@ -1496,5 +1493,31 @@ public class GuaraController implements RobotController{
 		x_ankle3.set(ankle3.getX());	y_ankle3.set(ankle3.getY());	z_ankle3.set(ankle3.getZ());		
    }
    
+   public void linearAndAngularMomentumRateOfChange(){
+	   
+      double deltaT = GuaraSimulation.DT;
+      rateOfChangeOfLinearMomentum.set(linearMomentum);
+      if (rob.getTime() == deltaT)
+         lastLinearMomentum.set(linearMomentum);
+      rateOfChangeOfLinearMomentum.sub(lastLinearMomentum);
+      rateOfChangeOfLinearMomentum.scale(1 / deltaT);
+      
+       //* Compute CoM acceleration
+       
+      comAcceleration.set(rateOfChangeOfLinearMomentum);
+      comAcceleration.scale(1 / rob.getMass());
+      
+       //* Compute rate of change of CoM angular momentum
+       
+      rateOfChangeOfAngularMomentum.set(angularMomentum);
+      rateOfChangeOfAngularMomentum.sub(lastAngularMomentum);
+      rateOfChangeOfAngularMomentum.scale(1 / deltaT);
+      
+      // * Actualize last angular and linear momentum
+       
+      lastLinearMomentum.set(linearMomentum);
+      lastAngularMomentum.set(angularMomentum);
+   }
   
+   
 }

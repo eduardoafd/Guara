@@ -623,6 +623,9 @@ public class GuaraRobot extends Robot{
    public GuaraLeg[] getLegs(){
       return pernas;
    }
-
+   
+   public double getMass() {
+	   return (mBody + 4*(mFoot+mShank+mThigh));
+   }
 
 }
